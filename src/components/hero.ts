@@ -6,7 +6,9 @@ export function renderHero(config: WeddingConfig): string {
 
   return `
     <header class="hero" id="home">
-      <div class="hero__photo" style="--hero-image: url('${config.heroImage}')" aria-hidden="true"></div>
+      <div class="hero__photo" aria-hidden="true">
+        <img class="hero__image" src="${config.heroImage}" alt="" />
+      </div>
       <div class="hero__content">
         <p class="hero__eyebrow label-caps">${config.tagline}</p>
         <h1 class="hero__names">

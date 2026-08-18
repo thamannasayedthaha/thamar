@@ -100,6 +100,9 @@ export function initTimelinePath(): () => void {
   }
 
   align()
-  window.addEventListener('resize', align)
+  if (typeof ResizeObserver === 'function') {
+    const observer = new ResizeObserver(align)
+    observer.observe(timeline)
+  }
   return align
 }

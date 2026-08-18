@@ -19,6 +19,7 @@ export function siteNav(page: SitePage): NavItem[] {
   const home = homePrefix(page)
   return [
     { href: `${home}#events`, label: 'Events' },
+    { href: `${home}#rsvp`, label: 'RSVP' },
     {
       label: 'Explore',
       children: [
@@ -28,7 +29,6 @@ export function siteNav(page: SitePage): NavItem[] {
         { href: 'live.html', label: 'Live', page: 'live' },
       ],
     },
-    { href: `${home}#rsvp`, label: 'RSVP' },
   ]
 }
 
@@ -122,12 +122,17 @@ function initNavMenu(): void {
 
   const setSub = (open: boolean) => {
     if (!moreItem || !moreBtn || !sub) return
+    if (moreItem.classList.contains('is-open') === open) return
     moreItem.classList.toggle('is-open', open)
     moreBtn.setAttribute('aria-expanded', String(open))
     sub.hidden = !open
   }
 
   const setOpen = (open: boolean) => {
+    if (nav.classList.contains('is-open') === open) {
+      if (!open) setSub(false)
+      return
+    }
     nav.classList.toggle('is-open', open)
     button.setAttribute('aria-expanded', String(open))
     button.textContent = open ? 'Close' : 'Menu'
