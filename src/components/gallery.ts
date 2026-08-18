@@ -1,6 +1,6 @@
 import type { GalleryCategory, GalleryImage, WeddingConfig } from '../types'
 
-export const GALLERY_PREVIEW_COUNT = 6
+export const GALLERY_PREVIEW_COUNT = 4
 
 export type GalleryGroup = {
   key: GalleryCategory

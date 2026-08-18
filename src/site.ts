@@ -5,9 +5,10 @@ import type { WeddingConfig } from './types'
 export type SitePage = 'home' | 'trail' | 'nearby' | 'quiz' | 'live' | 'gallery'
 
 type NavItem = {
-  href: string
+  href?: string
   label: string
   page?: SitePage
+  children?: NavItem[]
 }
 
 function homePrefix(page: SitePage): string {
@@ -17,21 +18,56 @@ function homePrefix(page: SitePage): string {
 export function siteNav(page: SitePage): NavItem[] {
   const home = homePrefix(page)
   return [
-    { href: 'trail.html', label: 'Trail', page: 'trail' },
     { href: `${home}#events`, label: 'Events' },
-    { href: 'nearby.html', label: 'Nearby', page: 'nearby' },
-    { href: 'quiz.html', label: 'Quiz', page: 'quiz' },
-    { href: 'live.html', label: 'Live', page: 'live' },
+    {
+      label: 'Explore',
+      children: [
+        { href: 'trail.html', label: 'Trail', page: 'trail' },
+        { href: 'nearby.html', label: 'Nearby', page: 'nearby' },
+        { href: 'quiz.html', label: 'Quiz', page: 'quiz' },
+        { href: 'live.html', label: 'Live', page: 'live' },
+      ],
+    },
     { href: `${home}#rsvp`, label: 'RSVP' },
   ]
+}
+
+function flattenNav(items: NavItem[]): NavItem[] {
+  return items.flatMap((item) => (item.children ? item.children : [item]))
+}
+
+function renderChildLink(item: NavItem, current: SitePage): string {
+  const active = item.page === current
+  const currentAttr = active ? ' aria-current="page"' : ''
+  return `<li><a class="label-caps" href="${item.href ?? '#'}"${currentAttr}>${item.label}</a></li>`
 }
 
 function renderLinkList(items: NavItem[], current: SitePage): string {
   return items
     .map((item) => {
-      const active = item.page === current
-      const currentAttr = active ? ' aria-current="page"' : ''
-      return `<li><a class="label-caps" href="${item.href}"${currentAttr}>${item.label}</a></li>`
+      if (item.children) {
+        const inSection = item.children.some((child) => child.page === current)
+        return `
+          <li class="nav__item nav__item--menu${inSection ? ' is-current' : ''}" data-nav-more-item>
+            <button
+              class="label-caps nav__more"
+              type="button"
+              data-nav-more
+              aria-expanded="false"
+              aria-controls="nav-explore"
+              aria-haspopup="true"
+            >
+              ${item.label}
+              <span class="nav__caret" aria-hidden="true"></span>
+            </button>
+            <ul class="nav__sub" id="nav-explore" data-nav-sub hidden>
+              ${item.children.map((child) => renderChildLink(child, current)).join('')}
+            </ul>
+          </li>
+        `
+      }
+
+      return renderChildLink(item, current)
     })
     .join('')
 }
@@ -41,12 +77,12 @@ export function renderPage(config: WeddingConfig, page: SitePage, main: string):
   const footerItems =
     page === 'home'
       ? [
-          ...navItems,
+          ...flattenNav(navItems),
           { href: '#story', label: 'Our Story' },
           { href: '#gallery', label: 'Gallery' },
           { href: '#photos', label: 'Photos' },
         ]
-      : navItems
+      : flattenNav(navItems)
 
   const homeHref = page === 'home' ? '#home' : 'index.html#home'
   const photosHref = page === 'home' ? '#photos' : 'index.html#photos'
@@ -80,14 +116,31 @@ function initNavMenu(): void {
   const button = document.querySelector<HTMLButtonElement>('[data-nav-toggle]')
   if (!nav || !button) return
 
+  const moreItem = nav.querySelector<HTMLElement>('[data-nav-more-item]')
+  const moreBtn = nav.querySelector<HTMLButtonElement>('[data-nav-more]')
+  const sub = nav.querySelector<HTMLElement>('[data-nav-sub]')
+
+  const setSub = (open: boolean) => {
+    if (!moreItem || !moreBtn || !sub) return
+    moreItem.classList.toggle('is-open', open)
+    moreBtn.setAttribute('aria-expanded', String(open))
+    sub.hidden = !open
+  }
+
   const setOpen = (open: boolean) => {
     nav.classList.toggle('is-open', open)
     button.setAttribute('aria-expanded', String(open))
     button.textContent = open ? 'Close' : 'Menu'
+    if (!open) setSub(false)
   }
 
   button.addEventListener('click', () => {
     setOpen(!nav.classList.contains('is-open'))
+  })
+
+  moreBtn?.addEventListener('click', (event) => {
+    event.stopPropagation()
+    setSub(!moreItem?.classList.contains('is-open'))
   })
 
   nav.querySelectorAll<HTMLAnchorElement>('.nav__links a').forEach((link) => {
@@ -95,11 +148,19 @@ function initNavMenu(): void {
   })
 
   document.addEventListener('keydown', (event) => {
-    if (event.key === 'Escape') setOpen(false)
+    if (event.key !== 'Escape') return
+    if (moreItem?.classList.contains('is-open')) {
+      setSub(false)
+      moreBtn?.focus()
+      return
+    }
+    setOpen(false)
   })
 
   document.addEventListener('click', (event) => {
-    if (!nav.contains(event.target as Node)) setOpen(false)
+    const target = event.target as Node
+    if (moreItem && !moreItem.contains(target)) setSub(false)
+    if (!nav.contains(target)) setOpen(false)
   })
 
   window.matchMedia('(min-width: 900px)').addEventListener('change', (event) => {

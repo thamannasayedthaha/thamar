@@ -145,6 +145,26 @@ export const wedding: WeddingConfig = {
     { src: '/images/gallery/2025-09-25(16).jpg', alt: 'Thamanna and Samar' },
     { src: '/images/gallery/2025-09-25(17).jpg', alt: 'Thamanna and Samar' },
     { src: '/images/gallery/2025-09-25(18).jpg', alt: 'Thamanna and Samar' },
+    {
+      src: '/images/gallery/placeholder-1.svg',
+      alt: 'A photograph from our years together',
+      category: 'years',
+    },
+    {
+      src: '/images/gallery/placeholder-2.svg',
+      alt: 'A photograph from our years together',
+      category: 'years',
+    },
+    {
+      src: '/images/gallery/placeholder-3.svg',
+      alt: 'A photograph from our years together',
+      category: 'years',
+    },
+    {
+      src: '/images/gallery/placeholder-4.svg',
+      alt: 'A photograph from our years together',
+      category: 'years',
+    },
   ],
   feed: {
     stories: [
@@ -310,38 +330,32 @@ export const wedding: WeddingConfig = {
     ],
   },
   guide: {
-    title: 'Our Favourite Local Hikes & Coffee Spots',
-    lede: 'If you are travelling in, walk a little of the story. These are the hills and cups that started it.',
+    title: 'Places We Keep Going Back To',
+    lede: 'A hill, a monastery café, an adda, and the airport Shell — if you have a spare morning, these are ours.',
     places: [
       {
-        title: 'Tegg’s Nose',
-        kind: 'hike',
-        note: 'Where we became trail mates. Short enough for a morning, big enough for the view. Finish at the tea room — non-negotiable.',
-        mapUrl: 'https://maps.google.com/?q=Tegg%27s+Nose+Country+Park',
-      },
-      {
-        title: 'Shutlingsloe',
-        kind: 'hike',
-        note: 'The Cheshire Matterhorn, if you like a nickname with your climb. Steep, quick, and excellent for pretending you are braver than Day 1.',
-        mapUrl: 'https://maps.google.com/?q=Shutlingsloe',
-      },
-      {
-        title: 'The Cloud',
-        kind: 'hike',
-        note: 'Bosley Cloud — a ridge with a proper payoff. Pack a layer. The wind has opinions.',
-        mapUrl: 'https://maps.google.com/?q=The+Cloud+Bosley',
-      },
-      {
-        title: 'Tegg’s Nose Tea Room',
+        title: 'Namdroling Monastery Café',
         kind: 'coffee',
-        note: 'The first cup. Cake is not optional. If the windows are steamed up, you are in the right place.',
-        mapUrl: 'https://maps.google.com/?q=Tegg%27s+Nose+Tea+Room',
+        note: 'After the Golden Temple in Bylakuppe. Tibetan tea, a quiet table, and as much time as the courtyard will give you.',
+        mapUrl: 'https://maps.google.com/?q=Namling+Cafe+Namdroling+Monastery+Bylakuppe',
       },
       {
-        title: 'A brew in Macclesfield',
+        title: 'Baggalur Adda',
         kind: 'coffee',
-        note: 'Wander the town after the hills. Find a corner table, order whatever is warming, and toast the day we met.',
-        mapUrl: 'https://maps.google.com/?q=Macclesfield+coffee',
+        note: 'Our north-Bangalore hangout. Order whatever is on the board and stay longer than you meant to.',
+        mapUrl: 'https://maps.google.com/?q=Bagalur+Adda+Bengaluru',
+      },
+      {
+        title: 'Shell at KIAL',
+        kind: 'coffee',
+        note: 'The airport pit stop — coffee, a stretch of the legs, then you are on your way.',
+        mapUrl: 'https://maps.google.com/?q=Shell+Kempegowda+International+Airport+Mylanahalli',
+      },
+      {
+        title: 'Basadibetta',
+        kind: 'hike',
+        note: 'Mandaragiri — four hundred steps, Jain temples at the top, and a view that is worth the climb. Easy, unhurried, generous.',
+        mapUrl: 'https://maps.google.com/?q=Basadi+Betta+Mandaragiri+Tumakuru',
       },
     ],
   },

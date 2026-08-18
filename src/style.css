@@ -343,6 +343,66 @@ html[data-theme='dark'] .theme-toggle__icon--sun {
   border-bottom: 1px solid var(--hairline);
 }
 
+.nav__item--menu {
+  display: grid;
+}
+
+.nav__more {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--on-surface-variant);
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+}
+
+.nav__more:hover,
+.nav__item--menu.is-current .nav__more,
+.nav__item--menu.is-open .nav__more {
+  color: var(--primary);
+}
+
+.nav__more:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 3px;
+}
+
+.nav__caret {
+  display: inline-block;
+  width: 0.38rem;
+  height: 0.38rem;
+  margin-left: 0.4rem;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  transform: translateY(-0.12rem) rotate(45deg);
+  transition: transform 0.2s ease;
+}
+
+.nav__item--menu.is-open .nav__caret {
+  transform: translateY(0.08rem) rotate(225deg);
+}
+
+.nav.is-open .nav__more {
+  padding: 0.85rem 0;
+  border-bottom: 1px solid var(--hairline);
+}
+
+.nav__sub {
+  list-style: none;
+  margin: 0;
+  padding: 0 0 0.25rem 0.9rem;
+}
+
+.nav.is-open .nav__sub a {
+  color: var(--on-surface-variant);
+}
+
 @media (min-width: 900px) {
   .nav__links,
   .nav.is-open .nav__links {
@@ -361,6 +421,52 @@ html[data-theme='dark'] .theme-toggle__icon--sun {
     display: inline;
     padding: 0 0 0.25rem;
     border-bottom: 1px solid transparent;
+  }
+
+  .nav__item--menu {
+    position: relative;
+  }
+
+  .nav__more {
+    width: auto;
+    justify-content: flex-start;
+    gap: 0.15rem;
+    padding: 0 0 0.25rem;
+    border-bottom: 1px solid transparent;
+  }
+
+  .nav.is-open .nav__more,
+  .nav__more:hover,
+  .nav__item--menu.is-current .nav__more,
+  .nav__item--menu.is-open .nav__more {
+    border-bottom-color: var(--primary);
+  }
+
+  .nav__sub {
+    position: absolute;
+    top: calc(100% + 0.7rem);
+    left: 50%;
+    transform: translateX(-50%);
+    min-width: 10.5rem;
+    padding: 0.4rem;
+    background: var(--surface-lowest);
+    border: 1px solid var(--hairline);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-soft);
+  }
+
+  .nav__sub a,
+  .nav.is-open .nav__sub a {
+    display: block;
+    padding: 0.55rem 0.8rem;
+    border-bottom: 0;
+    border-radius: var(--radius-sm);
+  }
+
+  .nav__sub a:hover,
+  .nav__sub a[aria-current='page'] {
+    background: var(--surface-low);
+    border-bottom-color: transparent;
   }
 
   .nav__cta--share {
@@ -402,13 +508,18 @@ html[data-theme='dark'] .theme-toggle__icon--sun {
 .hero {
   position: relative;
   display: grid;
+  grid-template-columns: 1fr;
+  grid-template-rows: min(68vh, 28rem) auto;
   text-align: center;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .hero__photo {
   position: relative;
-  min-height: min(68vh, 28rem);
+  grid-column: 1;
+  grid-row: 1;
+  min-height: 0;
+  height: 100%;
   background-color: var(--surface);
 }
 
@@ -436,31 +547,28 @@ html[data-theme='dark'] .hero__photo::after {
 
 .hero__content {
   position: relative;
+  grid-column: 1;
+  grid-row: 1;
   z-index: 1;
   display: grid;
   justify-items: center;
+  align-self: start;
+  justify-self: center;
   gap: var(--gutter);
-  padding: 2rem var(--margin) 1.25rem;
+  padding: 1.25rem var(--margin) 0;
+  text-align: center;
 }
 
 @media (min-width: 900px) {
   .hero {
-    display: grid;
-    grid-template-columns: 1fr;
     grid-template-rows: min(82vh, 42rem) auto;
-    place-items: stretch;
     min-height: 0;
     padding: 0;
     overflow: visible;
   }
 
   .hero__photo {
-    position: relative;
-    grid-column: 1;
-    grid-row: 1;
     inset: auto;
-    min-height: 0;
-    height: 100%;
   }
 
   html[data-theme='dark'] .hero__photo::after {
@@ -473,14 +581,7 @@ html[data-theme='dark'] .hero__photo::after {
   }
 
   .hero__content {
-    grid-column: 1;
-    grid-row: 1;
-    z-index: 1;
-    align-self: end;
-    justify-self: center;
-    padding: 0 var(--margin) 24rem;
-    margin-bottom: 0;
-    text-align: center;
+    padding: 2.5rem var(--margin) 0;
   }
 }
 
@@ -531,9 +632,12 @@ html[data-theme='dark'] .hero__photo::after {
 /* Countdown — pills inside the hero card */
 .countdown {
   display: grid;
+  grid-column: 1;
+  grid-row: 2;
   justify-items: center;
+  justify-self: center;
   gap: 1rem;
-  margin: 0 var(--margin) 3rem;
+  margin: -2rem var(--margin) 3rem;
   padding: 1.5rem 2rem;
   border-radius: var(--radius-xl);
   background: var(--glass);
@@ -633,7 +737,7 @@ html[data-theme='dark'] .hero__photo::after {
   gap: 2rem;
   width: min(100% - 2.5rem, 56rem);
   margin: 0 auto;
-  padding: var(--section-gap) 0;
+  padding: calc(var(--section-gap) - 2.5rem) 0 var(--section-gap);
   text-align: left;
 }
 
