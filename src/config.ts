@@ -384,7 +384,7 @@ export const wedding: WeddingConfig = {
   },
   quiz: {
     title: 'A Little Trivia',
-    lede: 'Eight questions. No prizes, plenty of opinions. Vote like you were on the ridge with us.',
+    lede: 'Eight cheeky questions. One right answer each — how well do you really know us?',
     questions: [
       {
         id: 'hike',
@@ -394,6 +394,7 @@ export const wedding: WeddingConfig = {
           { id: 'samar', label: 'Samar' },
           { id: 'tie', label: 'They both needed a sit-down' },
         ],
+        answerId: 'samar',
         coupleNote: 'Samar claims the summit. Thamanna claims the moral victory. The tea room claims them both.',
       },
       {
@@ -405,6 +406,7 @@ export const wedding: WeddingConfig = {
           { id: 'twelve', label: 'Twelve, easily' },
           { id: 'lost', label: 'We lost count' },
         ],
+        answerId: 'lost',
         coupleNote: 'The official tally is “we lost track around cup nine.” The kettle disagrees.',
       },
       {
@@ -415,7 +417,8 @@ export const wedding: WeddingConfig = {
           { id: 'samar', label: 'Samar' },
           { id: 'both', label: 'Both, confidently' },
         ],
-        coupleNote: 'One packed the map. The other packed confidence. A sheep was asked for directions.',
+        answerId: 'thamanna',
+        coupleNote: 'Thamanna took a “shortcut.” Samar had the map. A sheep was still asked for directions.',
       },
       {
         id: 'asked',
@@ -425,7 +428,8 @@ export const wedding: WeddingConfig = {
           { id: 'thamanna', label: 'Thamanna, at Pepper House' },
           { id: 'both', label: 'Both — it took two yeses' },
         ],
-        coupleNote: 'Samar asked by the sea. Thamanna asked in Kochi. Two proposals, two yeses, one very good story.',
+        answerId: 'samar',
+        coupleNote: 'Samar asked by the sea first. Thamanna asked later in Kochi — two yeses, one very good story.',
       },
       {
         id: 'coffee',
@@ -435,8 +439,9 @@ export const wedding: WeddingConfig = {
           { id: 'adda', label: 'Baggalur Adda' },
           { id: 'namdroling', label: 'Namdroling Monastery Café' },
         ],
+        answerId: 'adda',
         coupleNote:
-          'The airport Shell — planes low enough to duck, tea before every early flight. The adda and the monastery came first; the Shell came often.',
+          'Baggalur Adda stays open late enough for “just one more chai.” The Shell is for early flights; the monastery is for daylight.',
       },
       {
         id: 'snacks',
@@ -446,7 +451,8 @@ export const wedding: WeddingConfig = {
           { id: 'samar', label: 'Samar' },
           { id: 'shop', label: 'Whoever finds a shop first' },
         ],
-        coupleNote: 'One packed fruit. The other packed optimism. The café at the top packed the actual lunch.',
+        answerId: 'thamanna',
+        coupleNote: 'Thamanna packed the good stuff. Samar packed optimism. The café at the top still looked tempting.',
       },
       {
         id: 'flight',
@@ -456,6 +462,7 @@ export const wedding: WeddingConfig = {
           { id: 'samar', label: 'Samar, somewhere over the sea' },
           { id: 'both', label: 'Both, and nobody minds the bags' },
         ],
+        answerId: 'thamanna',
         coupleNote: 'One is out before the safety video. The other is “just resting their eyes.” The bags are fine. Probably.',
       },
       {
@@ -466,6 +473,7 @@ export const wedding: WeddingConfig = {
           { id: 'kerala', label: 'Kerala, between visits' },
           { id: 'nosy', label: 'Nice try — that\'s classified wedding intel' },
         ],
+        answerId: 'nosy',
         coupleNote: 'Haha, tricked you. The trail map already warned you about this one.',
       },
     ],

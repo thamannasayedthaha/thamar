@@ -1,12 +1,10 @@
 import type { QuizQuestion, WeddingConfig } from '../types'
 
-const VOTES_KEY = 'thamar-quiz-votes'
-const MINE_KEY = 'thamar-quiz-mine'
+const ANSWERS_KEY = 'thamar-quiz-answers-v2'
 
 const LETTERS = ['A', 'B', 'C', 'D', 'E']
 
-type VoteBook = Record<string, Record<string, number>>
-type MineBook = Record<string, string>
+type AnswerBook = Record<string, string>
 
 function readJson<T>(key: string, fallback: T): T {
   try {
@@ -25,6 +23,45 @@ function writeJson(key: string, value: unknown) {
   }
 }
 
+function countCorrect(questions: QuizQuestion[], answers: AnswerBook): number {
+  return questions.reduce((sum, question) => {
+    return sum + (answers[question.id] === question.answerId ? 1 : 0)
+  }, 0)
+}
+
+function resultCopy(correct: number, total: number): { title: string; blurb: string } {
+  const ratio = total === 0 ? 0 : correct / total
+
+  if (correct === total) {
+    return {
+      title: 'You were on the ridge with us',
+      blurb: 'Full marks. Save a seat at the tea room — you clearly already know the way.',
+    }
+  }
+  if (ratio >= 0.75) {
+    return {
+      title: 'Almost family',
+      blurb: 'A couple of misses, but the story still lands. We would hike with you again.',
+    }
+  }
+  if (ratio >= 0.5) {
+    return {
+      title: 'Solid acquaintance',
+      blurb: 'You know enough to order the next round. The rest is classified wedding intel.',
+    }
+  }
+  if (ratio >= 0.25) {
+    return {
+      title: 'Warming up',
+      blurb: 'A few lucky guesses, a few beautiful wrong turns. Come find us and claim a rematch over tea.',
+    }
+  }
+  return {
+    title: 'Beautiful stranger',
+    blurb: 'Wrong answers still count as guest energy. Stick around — the real stories are better than the quiz.',
+  }
+}
+
 function renderQuestion(question: QuizQuestion, index: number, total: number): string {
   const round = String(index + 1).padStart(2, '0')
 
@@ -35,9 +72,8 @@ function renderQuestion(question: QuizQuestion, index: number, total: number): s
           <span class="quiz__key" aria-hidden="true">${LETTERS[optionIndex] ?? '?'}</span>
           <span class="quiz__option-body">
             <span class="quiz__option-label">${option.label}</span>
-            <span class="quiz__option-bar" data-quiz-bar="${option.id}" aria-hidden="true"><span></span></span>
           </span>
-          <span class="quiz__option-tally" data-quiz-tally="${option.id}" hidden></span>
+          <span class="quiz__option-mark" data-quiz-mark="${option.id}" hidden aria-hidden="true"></span>
         </button>
       `,
     )
@@ -52,7 +88,7 @@ function renderQuestion(question: QuizQuestion, index: number, total: number): s
       <h3 class="quiz__prompt">${question.prompt}</h3>
       <div class="quiz__options" role="group" aria-label="${question.prompt}">${options}</div>
       <div class="quiz__reveal" data-quiz-note hidden>
-        <span class="quiz__reveal-kicker label-caps">From the couple</span>
+        <span class="quiz__reveal-kicker label-caps" data-quiz-result>From the couple</span>
         <p class="quiz__note">${question.coupleNote}</p>
       </div>
     </article>
@@ -64,23 +100,34 @@ export function renderQuiz(config: WeddingConfig): string {
   const pips = config.quiz.questions
     .map((_, index) => `<span class="quiz-show__pip" data-quiz-pip="${index}"></span>`)
     .join('')
+  const lights = config.quiz.questions
+    .map((_, index) => `<span class="quiz-show__light" data-quiz-light="${index}"></span>`)
+    .join('')
 
   return `
     <section class="section quiz quiz-show" id="quiz" aria-labelledby="quiz-heading">
       <div class="quiz-show__stage">
-        <div class="quiz-show__marquee" aria-hidden="true">
-          <span class="quiz-show__lights"></span>
+        <div class="quiz-show__marquee">
+          <span
+            class="quiz-show__lights"
+            data-quiz-lights
+            role="progressbar"
+            aria-label="Quiz progress"
+            aria-valuemin="0"
+            aria-valuemax="${total}"
+            aria-valuenow="0"
+          >${lights}</span>
         </div>
 
         <header class="quiz-show__header">
-          <p class="quiz-show__kicker label-caps">You're on the mic</p>
+          <p class="quiz-show__kicker label-caps">Pop quiz time</p>
           <h2 id="quiz-heading" class="quiz-show__title">${config.quiz.title}</h2>
           <p class="quiz-show__lede">${config.quiz.lede}</p>
         </header>
 
         <div class="quiz-show__hud" aria-live="polite">
           <div class="quiz-show__score">
-            <span class="quiz-show__score-label label-caps">Answered</span>
+            <span class="quiz-show__score-label label-caps">Score</span>
             <span class="quiz-show__score-value" data-quiz-score>0</span>
             <span class="quiz-show__score-total">/ ${total}</span>
           </div>
@@ -90,50 +137,108 @@ export function renderQuiz(config: WeddingConfig): string {
         <div class="quiz__list" data-quiz>
           ${config.quiz.questions.map((question, index) => renderQuestion(question, index, total)).join('')}
         </div>
+
+        <aside class="quiz-show__finale" data-quiz-finale hidden>
+          <p class="quiz-show__finale-kicker label-caps">Your result</p>
+          <p class="quiz-show__finale-score">
+            <span data-quiz-finale-score>0</span>
+            <span class="quiz-show__finale-of">/ ${total}</span>
+          </p>
+          <h3 class="quiz-show__finale-title" data-quiz-finale-title></h3>
+          <p class="quiz-show__finale-blurb" data-quiz-finale-blurb></p>
+          <button type="button" class="quiz-show__finale-retry" data-quiz-retry>
+            Take it again
+          </button>
+        </aside>
       </div>
     </section>
   `
 }
 
-function paintHud(root: HTMLElement, mine: MineBook) {
-  const answered = Object.keys(mine).length
+function paintHud(root: HTMLElement, questions: QuizQuestion[], answers: AnswerBook) {
+  const total = questions.length
+  const answered = Object.keys(answers).length
+  const correct = countCorrect(questions, answers)
   const score = root.querySelector<HTMLElement>('[data-quiz-score]')
-  if (score) score.textContent = String(answered)
+  if (score) score.textContent = String(correct)
 
-  root.querySelectorAll<HTMLElement>('[data-quiz-pip]').forEach((pip) => {
-    const index = Number(pip.dataset.quizPip)
-    const question = root.querySelector<HTMLElement>(`[data-quiz-index="${index}"]`)
-    const id = question?.dataset.quizQuestion
-    pip.classList.toggle('is-done', Boolean(id && mine[id]))
+  const lights = root.querySelector<HTMLElement>('[data-quiz-lights]')
+  if (lights) {
+    lights.setAttribute('aria-valuenow', String(answered))
+    lights.classList.toggle('is-complete', total > 0 && answered >= total)
+  }
+
+  questions.forEach((question, index) => {
+    const chosen = answers[question.id]
+    const isCorrect = chosen === question.answerId
+    const light = root.querySelector<HTMLElement>(`[data-quiz-light="${index}"]`)
+    const pip = root.querySelector<HTMLElement>(`[data-quiz-pip="${index}"]`)
+
+    if (light) {
+      light.classList.toggle('is-on', Boolean(chosen) && isCorrect)
+      light.classList.toggle('is-miss', Boolean(chosen) && !isCorrect)
+    }
+
+    if (pip) {
+      pip.classList.toggle('is-done', Boolean(chosen) && isCorrect)
+      pip.classList.toggle('is-miss', Boolean(chosen) && !isCorrect)
+    }
   })
+
+  paintFinale(root, questions, answers)
 }
 
-function paintQuestion(article: HTMLElement, question: QuizQuestion, votes: VoteBook, mine: MineBook) {
-  const chosen = mine[question.id]
-  const tallies = votes[question.id] ?? {}
-  const total = question.options.reduce((sum, option) => sum + (tallies[option.id] ?? 0), 0)
+function paintFinale(root: HTMLElement, questions: QuizQuestion[], answers: AnswerBook) {
+  const finale = root.querySelector<HTMLElement>('[data-quiz-finale]')
+  if (!finale) return
+
+  const total = questions.length
+  const complete = total > 0 && Object.keys(answers).length >= total
+  finale.hidden = !complete
+  if (!complete) return
+
+  const correct = countCorrect(questions, answers)
+  const copy = resultCopy(correct, total)
+  const score = finale.querySelector<HTMLElement>('[data-quiz-finale-score]')
+  const title = finale.querySelector<HTMLElement>('[data-quiz-finale-title]')
+  const blurb = finale.querySelector<HTMLElement>('[data-quiz-finale-blurb]')
+
+  if (score) score.textContent = String(correct)
+  if (title) title.textContent = copy.title
+  if (blurb) blurb.textContent = copy.blurb
+}
+
+function paintQuestion(article: HTMLElement, question: QuizQuestion, answers: AnswerBook) {
+  const chosen = answers[question.id]
+  const isCorrect = chosen === question.answerId
 
   article.classList.toggle('quiz__round--answered', Boolean(chosen))
+  article.classList.toggle('quiz__round--correct', Boolean(chosen) && isCorrect)
+  article.classList.toggle('quiz__round--wrong', Boolean(chosen) && !isCorrect)
 
   const note = article.querySelector<HTMLElement>('[data-quiz-note]')
+  const result = article.querySelector<HTMLElement>('[data-quiz-result]')
   if (note) note.hidden = !chosen
+  if (result && chosen) {
+    result.textContent = isCorrect ? 'Correct' : 'Not quite'
+  }
 
   for (const button of article.querySelectorAll<HTMLButtonElement>('[data-quiz-option]')) {
     const id = button.dataset.quizOption ?? ''
-    const count = tallies[id] ?? 0
-    const tally = button.querySelector<HTMLElement>('[data-quiz-tally]')
-    const bar = button.querySelector<HTMLElement>(`[data-quiz-bar="${id}"] span`)
-    const percent = total === 0 ? 0 : Math.round((count / total) * 100)
+    const mark = button.querySelector<HTMLElement>('[data-quiz-mark]')
+    const isAnswer = id === question.answerId
+    const isPicked = chosen === id
 
-    button.classList.toggle('quiz__option--picked', chosen === id)
+    button.classList.toggle('quiz__option--picked', isPicked)
+    button.classList.toggle('quiz__option--correct', Boolean(chosen) && isAnswer)
+    button.classList.toggle('quiz__option--wrong', Boolean(chosen) && isPicked && !isAnswer)
     button.disabled = Boolean(chosen)
 
-    if (tally) {
-      tally.hidden = !chosen
-      tally.textContent = `${percent}%`
+    if (mark) {
+      const show = Boolean(chosen) && (isAnswer || isPicked)
+      mark.hidden = !show
+      mark.textContent = isAnswer ? '✓' : isPicked ? '✕' : ''
     }
-
-    if (bar) bar.style.width = chosen ? `${percent}%` : '0%'
   }
 }
 
@@ -141,32 +246,53 @@ export function initQuiz(config: WeddingConfig): void {
   const root = document.querySelector<HTMLElement>('[data-quiz]')
   if (!root) return
 
-  const votes = readJson<VoteBook>(VOTES_KEY, {})
-  const mine = readJson<MineBook>(MINE_KEY, {})
+  const answers = readJson<AnswerBook>(ANSWERS_KEY, {})
   const section = root.closest<HTMLElement>('.quiz-show')
+  const hud = section ?? root
+  const questions = config.quiz.questions
 
-  paintHud(section ?? root, mine)
+  const refresh = () => {
+    paintHud(hud, questions, answers)
+    for (const question of questions) {
+      const article = root.querySelector<HTMLElement>(`[data-quiz-question="${question.id}"]`)
+      if (article) paintQuestion(article, question, answers)
+    }
+  }
 
-  for (const question of config.quiz.questions) {
+  refresh()
+
+  for (const question of questions) {
     const article = root.querySelector<HTMLElement>(`[data-quiz-question="${question.id}"]`)
     if (!article) continue
 
-    paintQuestion(article, question, votes, mine)
-
     article.addEventListener('click', (event) => {
       const target = (event.target as HTMLElement).closest<HTMLButtonElement>('[data-quiz-option]')
-      if (!target || mine[question.id]) return
+      if (!target || answers[question.id]) return
 
       const optionId = target.dataset.quizOption
       if (!optionId) return
 
-      votes[question.id] = votes[question.id] ?? {}
-      votes[question.id][optionId] = (votes[question.id][optionId] ?? 0) + 1
-      mine[question.id] = optionId
-      writeJson(VOTES_KEY, votes)
-      writeJson(MINE_KEY, mine)
-      paintQuestion(article, question, votes, mine)
-      paintHud(section ?? root, mine)
+      answers[question.id] = optionId
+      writeJson(ANSWERS_KEY, answers)
+      paintQuestion(article, question, answers)
+      paintHud(hud, questions, answers)
+
+      if (Object.keys(answers).length >= questions.length) {
+        hud.querySelector<HTMLElement>('[data-quiz-finale]')?.scrollIntoView({
+          behavior: 'smooth',
+          block: 'nearest',
+        })
+      }
     })
   }
+
+  hud.querySelector('[data-quiz-retry]')?.addEventListener('click', () => {
+    for (const key of Object.keys(answers)) delete answers[key]
+    writeJson(ANSWERS_KEY, answers)
+    refresh()
+    hud.querySelector<HTMLElement>('[data-quiz]')?.scrollIntoView({
+      behavior: 'smooth',
+      block: 'start',
+    })
+  })
 }

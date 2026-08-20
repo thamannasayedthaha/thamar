@@ -41,7 +41,9 @@ export type QuizQuestion = {
   id: string
   prompt: string
   options: QuizOption[]
-  /** Revealed after a guest votes */
+  /** Option id that counts as correct */
+  answerId: string
+  /** Revealed after a guest answers */
   coupleNote: string
 }
 
