@@ -25,6 +25,9 @@ export type TrailStop = {
   title: string
   kicker: string
   description: string
+  /** Optional photograph shown on the stop card */
+  image?: string
+  imageAlt?: string
   /** Optional Google Maps (or similar) link */
   mapUrl?: string
 }
@@ -43,9 +46,18 @@ export type QuizQuestion = {
 }
 
 export type GuidePlace = {
+  id: string
   title: string
   kind: 'hike' | 'coffee'
+  /** Where in the world it is — sits above the title */
+  kicker: string
   note: string
+  /** Advice revealed on the back of the card */
+  tip: string
+  /** How far out of the way it is */
+  travel: string
+  /** Caption inked into the stamp once a guest collects it */
+  stamp: string
   mapUrl?: string
 }
 
@@ -72,6 +84,13 @@ export type SocialStory = {
   image?: string
   /** Glyph shown when there is no photograph yet */
   icon?: string
+  /** Placeholder feed caption while the story is still coming */
+  caption?: string
+}
+
+export type SocialComment = {
+  handle: string
+  body: string
 }
 
 export type SocialPost = {
@@ -82,9 +101,27 @@ export type SocialPost = {
   body: string
   image?: string
   imageAlt?: string
+  /** Extra frames shown as a swipeable carousel alongside `image` */
+  gallery?: string[]
+  /** Small line under the author, as on a social post */
+  location?: string
   likes?: number
+  /** Name shown in the "liked by" line */
+  likedBy?: string
+  comments?: SocialComment[]
   /** Marks the post as happening now */
   live?: boolean
+  /** Keeps the post near the top of the feed, after live posts */
+  pinned?: boolean
+}
+
+export type SoundtrackTrack = {
+  id: string
+  title: string
+  /** Moment in the story — printed on the cassette J-card */
+  moment: string
+  /** File in /public/audio, e.g. /audio/01-macclesfield.mp3 */
+  src: string
 }
 
 export type PhotoUploadConfig = {
@@ -105,6 +142,10 @@ export type WeddingConfig = {
     partnerOne: string
     partnerTwo: string
     monogram: string
+    instagram: {
+      thamanna: string
+      samar: string
+    }
   }
   /** ISO datetime for the countdown (reception) */
   receptionDate: string
@@ -125,6 +166,11 @@ export type WeddingConfig = {
     stories: SocialStory[]
     posts: SocialPost[]
   }
+  soundtrack: {
+    title: string
+    lede: string
+    tracks: SoundtrackTrack[]
+  }
   photoUpload: PhotoUploadConfig
   rsvp: RsvpConfig
   trail: {
@@ -140,6 +186,8 @@ export type WeddingConfig = {
   guide: {
     title: string
     lede: string
+    /** Shown once a guest has stamped every place */
+    completeNote: string
     places: GuidePlace[]
   }
 }

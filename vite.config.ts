@@ -5,6 +5,11 @@ import { fileURLToPath } from 'node:url'
 const root = dirname(fileURLToPath(import.meta.url))
 
 export default defineConfig({
+  server: {
+    host: true,
+    port: 5173,
+    strictPort: true,
+  },
   build: {
     rollupOptions: {
       input: {
@@ -14,6 +19,8 @@ export default defineConfig({
         nearby: resolve(root, 'nearby.html'),
         quiz: resolve(root, 'quiz.html'),
         live: resolve(root, 'live.html'),
+        explore: resolve(root, 'explore.html'),
+        soundtrack: resolve(root, 'soundtrack.html'),
       },
     },
   },

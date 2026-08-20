@@ -57,8 +57,32 @@ export function initThemeToggle(): void {
 
   document.querySelectorAll<HTMLButtonElement>('[data-theme-toggle]').forEach((button) => {
     button.addEventListener('click', () => {
-      const next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark'
-      applyTheme(next)
+      const root = document.documentElement
+      const rect = button.getBoundingClientRect()
+      root.style.setProperty('--toggle-x', `${rect.left + rect.width / 2}px`)
+      root.style.setProperty('--toggle-y', `${rect.top + rect.height / 2}px`)
+
+      const next = root.dataset.theme === 'dark' ? 'light' : 'dark'
+      const swap = () => applyTheme(next)
+      const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+      const canTransition =
+        !reduceMotion && typeof document.startViewTransition === 'function'
+
+      const clearOrigin = () => {
+        root.style.removeProperty('--toggle-x')
+        root.style.removeProperty('--toggle-y')
+        root.classList.remove('theme-transitioning')
+      }
+
+      if (canTransition) {
+        const transition = document.startViewTransition(swap)
+        void transition.finished.finally(clearOrigin)
+        return
+      }
+
+      root.classList.add('theme-transitioning')
+      swap()
+      window.setTimeout(clearOrigin, reduceMotion ? 0 : 1200)
     })
   })
 }

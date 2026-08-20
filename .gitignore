@@ -15,6 +15,9 @@ dist-ssr
 # Unpacked design reference
 .design-ref
 
+# Local screenshot scratch
+.shots
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

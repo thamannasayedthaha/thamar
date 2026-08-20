@@ -81,21 +81,26 @@ export function renderEvents(config: WeddingConfig): string {
   `
 }
 
-/** Align the vine path with the first timeline marker. */
+/** Align the vine path from the first marker to the reception marker. */
 export function initTimelinePath(): () => void {
   const timeline = document.querySelector<HTMLElement>('.timeline')
   const path = document.querySelector<SVGElement>('.timeline__path')
   const firstMarker = document.querySelector<HTMLElement>('.event .event__marker')
+  const lastMarker =
+    document.querySelector<HTMLElement>('#event-reception .event__marker') ??
+    [...document.querySelectorAll<HTMLElement>('.event .event__marker')].at(-1)
 
-  if (!timeline || !path || !firstMarker) return () => {}
+  if (!timeline || !path || !firstMarker || !lastMarker) return () => {}
 
   const align = () => {
     const timelineRect = timeline.getBoundingClientRect()
-    const markerRect = firstMarker.getBoundingClientRect()
-    const startY = markerRect.top + markerRect.height / 2 - timelineRect.top
+    const firstRect = firstMarker.getBoundingClientRect()
+    const lastRect = lastMarker.getBoundingClientRect()
+    const startY = firstRect.top + firstRect.height / 2 - timelineRect.top
+    const endY = lastRect.top + lastRect.height / 2 - timelineRect.top
 
     path.style.top = `${startY}px`
-    path.style.height = `calc(100% - ${startY}px)`
+    path.style.height = `${Math.max(0, endY - startY)}px`
     path.style.bottom = 'auto'
   }
 
