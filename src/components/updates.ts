@@ -290,14 +290,7 @@ export function renderUpdates(config: WeddingConfig): string {
     : ''
 
   return `
-    <section class="section feed feed--twitter${!prefersReducedMotion() ? ' feed--staged' : ''}" id="live" aria-labelledby="live-heading">
-      <p class="feed__eyebrow label-caps">
-        <span class="feed__live-dot" aria-hidden="true"></span>
-        Live
-      </p>
-      <h2 id="live-heading" class="section__title">Timeline</h2>
-      <p class="section__lede">Posts from the week — as they happen.</p>
-
+    <section class="section feed feed--twitter${!prefersReducedMotion() ? ' feed--staged' : ''}" id="live" aria-label="Timeline">
       <div class="feed__stage">
         <div class="feed__app">
           <header class="feed__topbar">

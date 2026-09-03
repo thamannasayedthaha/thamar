@@ -1,4 +1,11 @@
-export type EventTheme = 'meeting' | 'nikah' | 'haldi' | 'mehendi' | 'sangeet' | 'reception'
+export type EventTheme =
+  | 'meeting'
+  | 'engagement'
+  | 'nikah'
+  | 'haldi'
+  | 'mehendi'
+  | 'sangeet'
+  | 'reception'
 
 export type WeddingEvent = {
   id: string
@@ -124,8 +131,8 @@ export type SoundtrackTrack = {
   title: string
   /** Moment in the story — printed on the cassette J-card */
   moment: string
-  /** File in /public/audio, e.g. /audio/01-macclesfield.mp3 */
-  src: string
+  /** YouTube video id — played via the official embed API */
+  youtubeId: string
 }
 
 export type PhotoUploadConfig = {

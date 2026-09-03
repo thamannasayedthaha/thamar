@@ -266,7 +266,7 @@ function renderPlace(place: GuidePlace, index: number): string {
 }
 
 export function renderGuide(config: WeddingConfig): string {
-  const { title, lede, completeNote, places } = config.guide
+  const { title, completeNote, places } = config.guide
 
   const slots = places
     .map(
@@ -279,10 +279,7 @@ export function renderGuide(config: WeddingConfig): string {
     .join('')
 
   return `
-    <section class="section guide" id="guide" aria-labelledby="guide-heading" data-guide>
-      <h2 id="guide-heading" class="section__title">${title}</h2>
-      <p class="section__lede">${lede}</p>
-
+    <section class="section guide" id="guide" aria-label="${title}" data-guide>
       <div class="guide__pass">
         <div class="guide__pass-id">
           <span class="guide__crest">${config.couple.monogram}</span>

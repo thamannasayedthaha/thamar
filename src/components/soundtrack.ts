@@ -8,6 +8,51 @@ const icons = {
   stop: `<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="7" width="10" height="10" rx="0.6"/></svg>`,
 }
 
+/** Minimal YouTube IFrame API surface used by the mixtape player. */
+type YtPlayer = {
+  playVideo: () => void
+  pauseVideo: () => void
+  stopVideo: () => void
+  seekTo: (seconds: number, allowSeekAhead: boolean) => void
+  loadVideoById: (videoId: string) => void
+  cueVideoById: (videoId: string) => void
+  setVolume: (volume: number) => void
+  getCurrentTime: () => number
+  getPlayerState: () => number
+  destroy: () => void
+}
+
+type YtNamespace = {
+  Player: new (
+    elementId: string,
+    config: {
+      height?: string | number
+      width?: string | number
+      videoId?: string
+      playerVars?: Record<string, string | number>
+      events?: {
+        onReady?: (event: { target: YtPlayer }) => void
+        onStateChange?: (event: { data: number; target: YtPlayer }) => void
+        onError?: (event: { data: number }) => void
+      }
+    },
+  ) => YtPlayer
+  PlayerState: {
+    ENDED: number
+    PLAYING: number
+    PAUSED: number
+    BUFFERING: number
+    CUED: number
+  }
+}
+
+declare global {
+  interface Window {
+    YT?: YtNamespace
+    onYouTubeIframeAPIReady?: () => void
+  }
+}
+
 function pad(n: number): string {
   return String(n + 1).padStart(2, '0')
 }
@@ -56,14 +101,14 @@ function renderBoombox(first: SoundtrackTrack | undefined, interactive: boolean)
             <span class="explore-deck__ribbon" aria-hidden="true"></span>
             <span class="explore-deck__reel explore-deck__reel--r" aria-hidden="true"></span>
           </div>
-          <p class="explore-deck__lcd" data-deck-lcd>
-            <span data-lcd-index>01</span>
-            <span data-lcd-title>${first?.title ?? 'No tape'}</span>
-            <span data-lcd-time>0:00</span>
-          </p>
         </div>
         <div class="explore-deck__speaker" aria-hidden="true"><span></span></div>
       </div>
+      <p class="explore-deck__lcd" data-deck-lcd>
+        <span data-lcd-index>01</span>
+        <span data-lcd-title>${first?.title ?? 'No tape'}</span>
+        <span data-lcd-time>0:00</span>
+      </p>
       <div class="explore-deck__controls">
         ${renderControl('prev', 'Previous track', icons.prev, interactive)}
         ${
@@ -126,23 +171,50 @@ export function renderSoundtrackPage(config: WeddingConfig): string {
           <p class="explore-deck__lede">${lede}</p>
           <ol class="explore-deck__list">${renderTrackList(tracks)}</ol>
         </div>
-        <audio data-deck-audio preload="none"></audio>
+        <div class="explore-deck__yt" aria-hidden="true">
+          <div id="explore-deck-yt-player"></div>
+        </div>
       </article>
     </section>
   `
 }
 
+function loadYouTubeApi(): Promise<YtNamespace> {
+  if (window.YT?.Player) return Promise.resolve(window.YT)
+
+  return new Promise((resolve, reject) => {
+    const previous = window.onYouTubeIframeAPIReady
+    window.onYouTubeIframeAPIReady = () => {
+      previous?.()
+      if (window.YT) resolve(window.YT)
+      else reject(new Error('YouTube API missing'))
+    }
+
+    if (!document.querySelector('script[data-yt-api]')) {
+      const script = document.createElement('script')
+      script.src = 'https://www.youtube.com/iframe_api'
+      script.async = true
+      script.dataset.ytApi = 'true'
+      script.onerror = () => reject(new Error('YouTube API failed to load'))
+      document.head.appendChild(script)
+    }
+  })
+}
+
 export function initSoundtrack(tracks: SoundtrackTrack[]): void {
   const root = document.querySelector<HTMLElement>('.explore-deck--page')
-  const audio = root?.querySelector<HTMLAudioElement>('[data-deck-audio]')
   const playBtn = root?.querySelector<HTMLButtonElement>('[data-deck-play]')
   const lcdTitle = root?.querySelector<HTMLElement>('[data-lcd-title]')
   const lcdIndex = root?.querySelector<HTMLElement>('[data-lcd-index]')
   const lcdTime = root?.querySelector<HTMLElement>('[data-lcd-time]')
   const vol = root?.querySelector<HTMLInputElement>('[data-deck-vol]')
-  if (!root || !audio || !playBtn || !tracks.length) return
+  if (!root || !playBtn || !tracks.length) return
 
   let index = 0
+  let player: YtPlayer | null = null
+  let ready = false
+  let timer: number | undefined
+  let wantPlay = false
 
   const setPlaying = (playing: boolean) => {
     root.classList.toggle('is-playing', playing)
@@ -161,48 +233,76 @@ export function initSoundtrack(tracks: SoundtrackTrack[]): void {
     })
   }
 
+  const applyVolume = () => {
+    if (!player) return
+    player.setVolume(Math.round(Number(vol?.value ?? 0.8) * 100))
+  }
+
+  const stopTimer = () => {
+    if (timer) window.clearInterval(timer)
+    timer = undefined
+  }
+
+  const startTimer = () => {
+    stopTimer()
+    timer = window.setInterval(() => {
+      if (!player || !lcdTime) return
+      lcdTime.textContent = formatTime(player.getCurrentTime())
+    }, 250)
+  }
+
   const load = (autoplay: boolean) => {
     const track = tracks[index]
-    if (!track) return
+    if (!track || !player || !ready) return
     paint()
-    audio.src = track.src
-    if (autoplay) {
-      void audio.play().then(() => setPlaying(true)).catch(() => {
-        setPlaying(false)
-        if (lcdTitle) lcdTitle.textContent = 'Insert cassette'
-      })
-    }
+    wantPlay = autoplay
+    if (autoplay) player.loadVideoById(track.youtubeId)
+    else player.cueVideoById(track.youtubeId)
+    applyVolume()
+  }
+
+  const next = () => {
+    index = (index + 1) % tracks.length
+    load(true)
+  }
+
+  const prev = () => {
+    index = (index - 1 + tracks.length) % tracks.length
+    load(true)
   }
 
   playBtn.addEventListener('click', () => {
-    if (!audio.src) load(true)
-    else if (audio.paused) {
-      void audio.play().then(() => setPlaying(true)).catch(() => {
-        setPlaying(false)
-        if (lcdTitle) lcdTitle.textContent = 'Insert cassette'
-      })
-    } else {
-      audio.pause()
+    if (!player || !ready) {
+      if (lcdTitle) lcdTitle.textContent = 'Warming up…'
+      return
+    }
+    const state = player.getPlayerState()
+    if (state === window.YT?.PlayerState.PLAYING || state === window.YT?.PlayerState.BUFFERING) {
+      player.pauseVideo()
       setPlaying(false)
+      stopTimer()
+    } else {
+      wantPlay = true
+      if (state === window.YT?.PlayerState.CUED || state === window.YT?.PlayerState.ENDED) {
+        load(true)
+      } else {
+        player.playVideo()
+      }
     }
   })
 
   root.querySelector('[data-deck-stop]')?.addEventListener('click', () => {
-    audio.pause()
-    audio.currentTime = 0
+    if (!player) return
+    wantPlay = false
+    player.stopVideo()
+    player.seekTo(0, true)
     setPlaying(false)
+    stopTimer()
     if (lcdTime) lcdTime.textContent = '0:00'
   })
 
-  root.querySelector('[data-deck-prev]')?.addEventListener('click', () => {
-    index = (index - 1 + tracks.length) % tracks.length
-    load(true)
-  })
-
-  root.querySelector('[data-deck-next]')?.addEventListener('click', () => {
-    index = (index + 1) % tracks.length
-    load(true)
-  })
+  root.querySelector('[data-deck-prev]')?.addEventListener('click', prev)
+  root.querySelector('[data-deck-next]')?.addEventListener('click', next)
 
   root.querySelectorAll<HTMLButtonElement>('[data-track]').forEach((button) => {
     button.addEventListener('click', () => {
@@ -211,24 +311,57 @@ export function initSoundtrack(tracks: SoundtrackTrack[]): void {
     })
   })
 
-  vol?.addEventListener('input', () => {
-    audio.volume = Number(vol.value)
-  })
-  audio.volume = Number(vol?.value ?? 0.8)
-
-  audio.addEventListener('timeupdate', () => {
-    if (lcdTime) lcdTime.textContent = formatTime(audio.currentTime)
-  })
-
-  audio.addEventListener('ended', () => {
-    index = (index + 1) % tracks.length
-    load(true)
-  })
-
-  audio.addEventListener('error', () => {
-    setPlaying(false)
-    if (lcdTitle) lcdTitle.textContent = 'Insert cassette'
-  })
+  vol?.addEventListener('input', applyVolume)
 
   paint()
+
+  void loadYouTubeApi()
+    .then((YT) => {
+      player = new YT.Player('explore-deck-yt-player', {
+        height: '1',
+        width: '1',
+        videoId: tracks[0]?.youtubeId,
+        playerVars: {
+          autoplay: 0,
+          controls: 0,
+          disablekb: 1,
+          fs: 0,
+          modestbranding: 1,
+          playsinline: 1,
+          rel: 0,
+          origin: window.location.origin,
+        },
+        events: {
+          onReady: () => {
+            ready = true
+            applyVolume()
+            paint()
+          },
+          onStateChange: (event) => {
+            if (event.data === YT.PlayerState.PLAYING) {
+              setPlaying(true)
+              startTimer()
+            } else if (event.data === YT.PlayerState.PAUSED) {
+              setPlaying(false)
+              stopTimer()
+            } else if (event.data === YT.PlayerState.ENDED) {
+              setPlaying(false)
+              stopTimer()
+              if (lcdTime) lcdTime.textContent = '0:00'
+              next()
+            } else if (event.data === YT.PlayerState.CUED && wantPlay) {
+              event.target.playVideo()
+            }
+          },
+          onError: () => {
+            setPlaying(false)
+            stopTimer()
+            if (lcdTitle) lcdTitle.textContent = 'Tape snagged'
+          },
+        },
+      })
+    })
+    .catch(() => {
+      if (lcdTitle) lcdTitle.textContent = 'Insert cassette'
+    })
 }

@@ -1,4 +1,5 @@
 import type { WeddingConfig } from '../types'
+import { renderWcCorners, renderWcWash } from './watercolor'
 
 export function renderStory(config: WeddingConfig): string {
   const [first = '', ...rest] = config.story.paragraphs
@@ -9,7 +10,9 @@ export function renderStory(config: WeddingConfig): string {
 
   return `
     <section class="story" id="story" aria-labelledby="story-heading">
+      ${renderWcCorners({ top: 'blush', bottom: 'botanical', topSide: 'tl', bottomSide: 'br' })}
       <div class="story__frame">
+        ${renderWcWash('wc--wash-story')}
         <img src="${config.story.image}" alt="${config.story.imageAlt}" />
         <span class="story__seal" aria-hidden="true">${config.couple.monogram}</span>
       </div>

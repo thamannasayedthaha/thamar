@@ -1,5 +1,6 @@
 import QRCode from 'qrcode'
 import type { WeddingConfig } from '../types'
+import { renderWcWash } from './watercolor'
 
 function cameraMark(): string {
   return `
@@ -39,6 +40,7 @@ export function renderPhotoDrop(config: WeddingConfig): string {
       <h2 id="photodrop-heading" class="section__title">Share the Love</h2>
       <p class="section__lede">${note}</p>
       <div class="photodrop__stage">
+        ${renderWcWash('wc--wash-photodrop')}
         ${polaroid('left', config.gallery[0]?.src ?? '', `#${monogram.replace('&', '')}2026`)}
         ${polaroid('right', config.gallery[2]?.src ?? config.gallery[1]?.src ?? '', 'Cheers!')}
         <div class="photodrop__card">

@@ -13,7 +13,7 @@ function renderDetail(label: string, value: string): string {
 }
 
 function eventMapUrl(event: WeddingEvent): string | undefined {
-  if (event.id === 'meeting' || event.id === 'nikah') return undefined
+  if (event.id === 'meeting' || event.id === 'engagement' || event.id === 'nikah') return undefined
   if (event.mapUrl) return event.mapUrl
   const query = [event.venue, event.address].filter((part) => part.trim()).join(', ')
   if (!query) return undefined

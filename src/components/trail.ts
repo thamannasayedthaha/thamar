@@ -103,7 +103,7 @@ function renderStopCard(stop: TrailStop, index: number, active: boolean): string
 }
 
 export function renderTrail(config: WeddingConfig): string {
-  const { title, lede, stops } = config.trail
+  const { title, stops } = config.trail
   const first = stops[0]?.id ?? ''
 
   const pins = stops
@@ -132,10 +132,7 @@ export function renderTrail(config: WeddingConfig): string {
   const cards = stops.map((stop, index) => renderStopCard(stop, index, stop.id === first)).join('')
 
   return `
-    <section class="section trail" id="trail" aria-labelledby="trail-heading">
-      <h2 id="trail-heading" class="section__title">${title}</h2>
-      <p class="section__lede">${lede}</p>
-
+    <section class="section trail" id="trail" aria-label="${title}">
       <div class="trail__map" data-trail>
         <div class="trail__map-view">
           <div class="explore-gmaps__search">

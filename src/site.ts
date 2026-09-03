@@ -1,5 +1,6 @@
 import { renderAmbientOverlay } from './components/petals'
 import { initLoader } from './components/loader'
+import { renderWcCorners, renderWcDivider } from './components/watercolor'
 import { initThemeToggle, renderThemeToggle } from './theme'
 import type { WeddingConfig } from './types'
 
@@ -46,10 +47,17 @@ export function renderPage(config: WeddingConfig, page: SitePage, main: string):
   const footerItems =
     page === 'home'
       ? [
-          ...navItems,
           { href: '#story', label: 'Our Story' },
+          { href: '#events', label: 'Events' },
           { href: '#gallery', label: 'Gallery' },
-          { href: '#photos', label: 'Photos' },
+          { href: '#photos', label: 'Share the Love' },
+          { href: '#rsvp', label: 'RSVP' },
+          {
+            href: 'explore.html',
+            label: 'Explore',
+            page: 'explore' as const,
+            pages: ['explore', 'trail', 'nearby', 'quiz', 'live', 'soundtrack'] as SitePage[],
+          },
         ]
       : [
           ...navItems,
@@ -79,6 +87,8 @@ export function renderPage(config: WeddingConfig, page: SitePage, main: string):
     <main>${main}</main>
     <a class="share-fab label-caps" href="${photosHref}">Share the Love</a>
     <footer class="footer">
+      ${renderWcDivider()}
+      ${renderWcCorners({ bottom: 'botanical', bottomSide: 'bl' })}
       <div class="footer__monogram">${monogram}</div>
       <ul class="footer__links">${renderLinkList(footerItems, page)}</ul>
       <p>${partnerOne} &amp; ${partnerTwo} — handcrafted with love</p>

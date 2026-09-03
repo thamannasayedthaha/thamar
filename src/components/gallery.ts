@@ -1,4 +1,5 @@
 import type { GalleryCategory, GalleryImage, WeddingConfig } from '../types'
+import { renderWcCorners } from './watercolor'
 
 export const GALLERY_PREVIEW_COUNT = 4
 
@@ -187,12 +188,11 @@ export function renderAlbum(config: WeddingConfig, active: GalleryCategory): str
     .join('')
 
   return `
-    <section class="section album" id="album" aria-labelledby="album-heading">
+    <section class="section section--wc album" id="album" aria-label="Keepsake Gallery">
+      ${renderWcCorners({ bottom: 'blush', bottomSide: 'bl' })}
       <p class="album__back">
         <a class="label-caps" href="index.html#gallery">Back to the invitation</a>
       </p>
-      <h1 id="album-heading" class="section__title">Keepsake Gallery</h1>
-      <p class="section__lede">Every frame we wanted to keep.</p>
       ${renderTabs(groups, current)}
       <div class="gallery__panels">${panels}</div>
     </section>
