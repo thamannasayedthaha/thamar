@@ -69,6 +69,8 @@ export type GalleryImage = {
   src: string
   alt: string
   caption?: string
+  /** Year or era label shown on the years timeline */
+  era?: string
   /**
    * Optional photo classification used by the Keepsake Gallery.
    * If omitted, the gallery will infer a category from the image src.

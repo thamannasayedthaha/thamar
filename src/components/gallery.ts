@@ -53,6 +53,38 @@ export function renderImage(image: GalleryImage): string {
   `
 }
 
+function renderYearsStop(image: GalleryImage, index: number): string {
+  const era = image.era
+    ? `<span class="years-timeline__era label-caps">${image.era}</span>`
+    : ''
+  const title = image.caption
+    ? `<figcaption class="years-timeline__title">${image.caption}</figcaption>`
+    : ''
+
+  return `
+    <article class="years-timeline__stop ${index % 2 === 0 ? 'years-timeline__stop--left' : 'years-timeline__stop--right'}">
+      ${era}
+      <span class="years-timeline__dot" aria-hidden="true"></span>
+      <figure class="years-timeline__card">
+        <div class="years-timeline__frame">
+          <img class="years-timeline__image" src="${image.src}" alt="${image.alt}" loading="lazy" />
+        </div>
+        ${title}
+      </figure>
+    </article>
+  `
+}
+
+function renderYearsTimeline(images: GalleryImage[], limit?: number): string {
+  if (images.length === 0) return renderEmpty('us through the years')
+  const shown = typeof limit === 'number' ? images.slice(0, limit) : images
+  return `
+    <div class="years-timeline" role="list">
+      ${shown.map((image, index) => renderYearsStop(image, index)).join('')}
+    </div>
+  `
+}
+
 function renderEmpty(label: string): string {
   return `<p class="gallery__empty">Photographs from ${label.toLowerCase()} — we will add them here as we gather them.</p>`
 }
@@ -61,6 +93,14 @@ function renderGrid(images: GalleryImage[], hero: boolean): string {
   if (images.length === 0) return renderEmpty('us through the years')
   const cls = hero ? 'gallery__grid gallery__grid--hero' : 'gallery__grid'
   return `<div class="${cls}">${images.map(renderImage).join('')}</div>`
+}
+
+function renderGroupContent(group: GalleryGroup, preview: boolean): string {
+  if (group.key === 'years') {
+    return renderYearsTimeline(group.images, preview ? GALLERY_PREVIEW_COUNT : undefined)
+  }
+  const images = preview ? group.images.slice(0, GALLERY_PREVIEW_COUNT) : group.images
+  return renderGrid(images, preview)
 }
 
 function renderTabs(groups: GalleryGroup[], active: GalleryCategory): string {
@@ -95,7 +135,6 @@ export function renderGallery(config: WeddingConfig): string {
 
   const panels = groups
     .map((group) => {
-      const preview = group.images.slice(0, GALLERY_PREVIEW_COUNT)
       const hasMore = group.images.length > GALLERY_PREVIEW_COUNT
 
       const more = hasMore
@@ -109,7 +148,7 @@ export function renderGallery(config: WeddingConfig): string {
           ${group.key === defaultTab ? '' : 'hidden'}
           role="tabpanel"
         >
-          ${renderGrid(preview, true)}
+          ${renderGroupContent(group, true)}
           ${more}
         </div>
       `
@@ -141,7 +180,7 @@ export function renderAlbum(config: WeddingConfig, active: GalleryCategory): str
           ${group.key === current ? '' : 'hidden'}
           role="tabpanel"
         >
-          ${renderGrid(group.images, false)}
+          ${renderGroupContent(group, false)}
         </div>
       `,
     )

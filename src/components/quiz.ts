@@ -62,6 +62,16 @@ function resultCopy(correct: number, total: number): { title: string; blurb: str
   }
 }
 
+const LIGHT_BULB = `
+  <svg class="quiz-show__bulb" viewBox="0 0 28 34" aria-hidden="true" focusable="false">
+    <line class="quiz-show__bulb-stem" x1="14" y1="0" x2="14" y2="5"/>
+    <circle class="quiz-show__bulb-glass" cx="14" cy="14" r="9.2"/>
+    <ellipse class="quiz-show__bulb-shine" cx="10.5" cy="10.5" rx="2.4" ry="3.2"/>
+    <rect class="quiz-show__bulb-collar" x="10.2" y="22.4" width="7.6" height="2.2" rx="0.6"/>
+    <path class="quiz-show__bulb-base" d="M11 24.6h6v2.2c0 1.4-1.3 2.5-3 2.5s-3-1.1-3-2.5z"/>
+  </svg>
+`
+
 function renderQuestion(question: QuizQuestion, index: number, total: number): string {
   const round = String(index + 1).padStart(2, '0')
 
@@ -101,7 +111,7 @@ export function renderQuiz(config: WeddingConfig): string {
     .map((_, index) => `<span class="quiz-show__pip" data-quiz-pip="${index}"></span>`)
     .join('')
   const lights = config.quiz.questions
-    .map((_, index) => `<span class="quiz-show__light" data-quiz-light="${index}"></span>`)
+    .map((_, index) => `<span class="quiz-show__light" data-quiz-light="${index}">${LIGHT_BULB}</span>`)
     .join('')
 
   return `
@@ -175,8 +185,8 @@ function paintHud(root: HTMLElement, questions: QuizQuestion[], answers: AnswerB
     const pip = root.querySelector<HTMLElement>(`[data-quiz-pip="${index}"]`)
 
     if (light) {
-      light.classList.toggle('is-on', Boolean(chosen) && isCorrect)
-      light.classList.toggle('is-miss', Boolean(chosen) && !isCorrect)
+      light.classList.toggle('is-on', Boolean(chosen))
+      light.classList.remove('is-miss')
     }
 
     if (pip) {

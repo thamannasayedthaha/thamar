@@ -68,7 +68,7 @@ const specs: Record<DressCodeTheme, DressCodeSpec> = {
   },
   sangeet: {
     kicker: 'Sangeet attire',
-    lede: 'Dress to impress! No hiking boots required for this one — though comfortable dancing shoes are encouraged.',
+    lede: 'Channel your favourite Bollywood look — entirely optional. Comfortable dancing shoes are still encouraged.',
     ariaLabel: 'Illustrated lineup of guests in sequinned and glamorous clothes for Sangeet',
     background: '#fbf7ff',
     figures: [
@@ -92,7 +92,7 @@ const specs: Record<DressCodeTheme, DressCodeSpec> = {
   },
   reception: {
     kicker: 'Reception attire',
-    lede: 'Dress to impress! No hiking boots required for this one — though comfortable dancing shoes are encouraged.',
+    lede: 'Dress to impress. Come polished — and stay as long as the music does.',
     ariaLabel: 'Illustrated lineup of guests in black-tie evening wear for the reception',
     background: '#f8f6f1',
     figures: [
