@@ -10,28 +10,28 @@ type DressCodeSpec = {
 
 const specs: Record<DressCodeTheme, DressCodeSpec> = {
   haldi: {
-    kicker: 'Haldi attire',
+    kicker: 'Phoolon Ki Holi attire',
     lede: 'Shades of green. Come ready to be coloured — white trainers are a brave choice.',
     ariaLabel: 'Watercolor lineup of guests in shades of green Haldi clothes',
     image: '/images/watercolor/dresscode-haldi.jpg?v=2',
     imageDark: '/images/watercolor/dresscode-haldi-dark.jpg',
   },
   mehendi: {
-    kicker: 'Mehendi attire',
+    kicker: 'Rang Ishq Da attire',
     lede: 'The brightest thing you own. If it would startle a sheep on Tegg’s Nose, it belongs here.',
     ariaLabel: 'Watercolor lineup of guests in bright festive Mehendi clothes',
     image: '/images/watercolor/dresscode-mehendi.jpg',
     imageDark: '/images/watercolor/dresscode-mehendi-dark.jpg',
   },
   sangeet: {
-    kicker: 'Sangeet attire',
+    kicker: 'Bass & Bollywood attire',
     lede: 'Channel your favourite Bollywood character — the more iconic the better. Dancing shoes mandatory.',
     ariaLabel: 'Watercolor lineup of guests in iconic Bollywood outfits — YJHD lehenga and sherwani, DDLJ yellow sari and leather jacket, Kal Ho Naa Ho white shirt',
     image: '/images/watercolor/dresscode-sangeet.jpg?v=2',
     imageDark: '/images/watercolor/dresscode-sangeet-dark.jpg',
   },
   reception: {
-    kicker: 'Reception attire',
+    kicker: 'Wedding Reception attire',
     lede: 'Dress to impress. Come polished — and stay as long as the music does.',
     ariaLabel: 'Watercolor lineup of guests in formal reception evening wear',
     image: '/images/watercolor/dresscode-reception.jpg',

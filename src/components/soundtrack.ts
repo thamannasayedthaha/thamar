@@ -1,4 +1,5 @@
 import type { SoundtrackTrack, WeddingConfig } from '../types'
+import { duckAmbient, unduckAmbient } from '../ambient'
 import { loadYouTubeApi, type YtPlayer } from '../youtube'
 
 const icons = {
@@ -215,6 +216,7 @@ export function initSoundtrack(tracks: SoundtrackTrack[]): void {
       player.pauseVideo()
       setPlaying(false)
       stopTimer()
+      unduckAmbient()
     } else {
       wantPlay = true
       if (state === window.YT?.PlayerState.CUED || state === window.YT?.PlayerState.ENDED) {
@@ -232,6 +234,7 @@ export function initSoundtrack(tracks: SoundtrackTrack[]): void {
     player.seekTo(0, true)
     setPlaying(false)
     stopTimer()
+    unduckAmbient()
     if (lcdTime) lcdTime.textContent = '0:00'
   })
 
@@ -275,9 +278,11 @@ export function initSoundtrack(tracks: SoundtrackTrack[]): void {
             if (event.data === YT.PlayerState.PLAYING) {
               setPlaying(true)
               startTimer()
+              duckAmbient()
             } else if (event.data === YT.PlayerState.PAUSED) {
               setPlaying(false)
               stopTimer()
+              unduckAmbient()
             } else if (event.data === YT.PlayerState.ENDED) {
               setPlaying(false)
               stopTimer()
@@ -290,6 +295,7 @@ export function initSoundtrack(tracks: SoundtrackTrack[]): void {
           onError: () => {
             setPlaying(false)
             stopTimer()
+            unduckAmbient()
             if (lcdTitle) lcdTitle.textContent = 'Tape snagged'
           },
         },

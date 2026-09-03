@@ -1,3 +1,4 @@
+import { initAmbient, renderMusicToggle } from './ambient'
 import { renderAmbientOverlay } from './components/petals'
 import { initLoader } from './components/loader'
 import { renderWcCorners, renderWcDivider } from './components/watercolor'
@@ -78,6 +79,7 @@ export function renderPage(config: WeddingConfig, page: SitePage, main: string):
       <ul class="nav__links" id="site-nav-links">${renderLinkList(navItems, page)}</ul>
       <div class="nav__end">
         ${renderThemeToggle()}
+        ${renderMusicToggle()}
         <a class="nav__cta nav__cta--share label-caps" href="${photosHref}">Share the Love</a>
         <button class="nav__cta nav__menu-btn label-caps" type="button" data-nav-toggle aria-expanded="false" aria-controls="site-nav-links">
           Menu
@@ -85,7 +87,10 @@ export function renderPage(config: WeddingConfig, page: SitePage, main: string):
       </div>
     </nav>
     <main>${main}</main>
-    <a class="share-fab label-caps" href="${photosHref}">Share the Love</a>
+    <div class="share-dock">
+      ${renderMusicToggle()}
+      <a class="share-fab label-caps" href="${photosHref}">Share the Love</a>
+    </div>
     <footer class="footer">
       ${renderWcDivider()}
       ${renderWcCorners({ bottom: 'botanical', bottomSide: 'bl' })}
@@ -133,5 +138,6 @@ function initNavMenu(): void {
 export function initSite(): void {
   initThemeToggle()
   initNavMenu()
+  initAmbient()
   initLoader()
 }
