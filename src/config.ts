@@ -74,7 +74,7 @@ export const wedding: WeddingConfig = {
         'A morning of turmeric, laughter, and blessings under the sun. Come ready to be coloured.',
       theme: 'haldi',
       icon: '✿',
-      dressCode: 'Yellows, whites and gold',
+      dressCode: 'Shades of green',
       dressNote: 'Come ready to be coloured. White trainers are a brave choice.',
     },
     {

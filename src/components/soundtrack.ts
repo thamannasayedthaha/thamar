@@ -1,4 +1,5 @@
 import type { SoundtrackTrack, WeddingConfig } from '../types'
+import { loadYouTubeApi, type YtPlayer } from '../youtube'
 
 const icons = {
   play: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13L19 12z"/></svg>`,
@@ -6,51 +7,6 @@ const icons = {
   prev: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 5h2.2v14H6zM18 5 9 12l9 7z"/></svg>`,
   next: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15.8 5H18v14h-2.2zM6 5l9 7-9 7z"/></svg>`,
   stop: `<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="7" width="10" height="10" rx="0.6"/></svg>`,
-}
-
-/** Minimal YouTube IFrame API surface used by the mixtape player. */
-type YtPlayer = {
-  playVideo: () => void
-  pauseVideo: () => void
-  stopVideo: () => void
-  seekTo: (seconds: number, allowSeekAhead: boolean) => void
-  loadVideoById: (videoId: string) => void
-  cueVideoById: (videoId: string) => void
-  setVolume: (volume: number) => void
-  getCurrentTime: () => number
-  getPlayerState: () => number
-  destroy: () => void
-}
-
-type YtNamespace = {
-  Player: new (
-    elementId: string,
-    config: {
-      height?: string | number
-      width?: string | number
-      videoId?: string
-      playerVars?: Record<string, string | number>
-      events?: {
-        onReady?: (event: { target: YtPlayer }) => void
-        onStateChange?: (event: { data: number; target: YtPlayer }) => void
-        onError?: (event: { data: number }) => void
-      }
-    },
-  ) => YtPlayer
-  PlayerState: {
-    ENDED: number
-    PLAYING: number
-    PAUSED: number
-    BUFFERING: number
-    CUED: number
-  }
-}
-
-declare global {
-  interface Window {
-    YT?: YtNamespace
-    onYouTubeIframeAPIReady?: () => void
-  }
 }
 
 function pad(n: number): string {
@@ -177,28 +133,6 @@ export function renderSoundtrackPage(config: WeddingConfig): string {
       </article>
     </section>
   `
-}
-
-function loadYouTubeApi(): Promise<YtNamespace> {
-  if (window.YT?.Player) return Promise.resolve(window.YT)
-
-  return new Promise((resolve, reject) => {
-    const previous = window.onYouTubeIframeAPIReady
-    window.onYouTubeIframeAPIReady = () => {
-      previous?.()
-      if (window.YT) resolve(window.YT)
-      else reject(new Error('YouTube API missing'))
-    }
-
-    if (!document.querySelector('script[data-yt-api]')) {
-      const script = document.createElement('script')
-      script.src = 'https://www.youtube.com/iframe_api'
-      script.async = true
-      script.dataset.ytApi = 'true'
-      script.onerror = () => reject(new Error('YouTube API failed to load'))
-      document.head.appendChild(script)
-    }
-  })
 }
 
 export function initSoundtrack(tracks: SoundtrackTrack[]): void {

@@ -179,56 +179,27 @@ function renderMehendi(): string {
   `
 }
 
-function dancer(kind: 'woman' | 'man', x: number, variant: number): string {
-  const skins = ['#e2b48a', '#c48a58', '#d7a06e', '#e8c09a']
-  const hair = ['#2c1a12', '#1a100c', '#4a2c1c']
-  const skin = skins[variant % skins.length]
-  const hairColor = hair[variant % hair.length]
-  const tops = ['#9b7ec8', '#d4af60', '#c9b0e8', '#6b3d8a', '#fff8e8']
-  const bottoms = ['#3d2a5c', '#9b7ec8', '#d4af60', '#2a1a40', '#e8d4a0']
-  const top = tops[variant % tops.length]
-  const bottom = bottoms[variant % bottoms.length]
-  const delay = variant * 0.12
+function dancer(src: string, x: number, variant: number): string {
+  const delay = variant * 0.1
   const move = variant % 2 === 0 ? 'twirl' : 'bounce'
-
-  const figure =
-    kind === 'man'
-      ? `
-        <ellipse cx="44" cy="182" rx="20" ry="6" fill="#8c9c82" opacity="0.2"/>
-        <circle cx="48" cy="28" r="16" fill="${skin}"/>
-        <path d="M34 22c4-10 22-12 28-2 1 2-2 4-5 3-6-2-14-1-20 2-2 1-4-1-3-3z" fill="${hairColor}"/>
-        <path d="M18 58c-8 16 2 38 16 32" fill="none" stroke="${top}" stroke-width="10" stroke-linecap="round"/>
-        <path d="M70 52c16 4 22 30 6 40" fill="none" stroke="${top}" stroke-width="10" stroke-linecap="round"/>
-        <rect x="26" y="48" width="36" height="54" rx="10" fill="${top}"/>
-        <rect x="30" y="102" width="11" height="48" rx="5" fill="${bottom}"/>
-        <rect x="46" y="100" width="11" height="52" rx="5" fill="${bottom}"/>
-        <ellipse cx="36" cy="152" rx="8" ry="4" fill="#1a1a1a"/>
-        <ellipse cx="52" cy="154" rx="8" ry="4" fill="#1a1a1a"/>
-      `
-      : `
-        <ellipse cx="50" cy="192" rx="22" ry="6" fill="#8c9c82" opacity="0.2"/>
-        <circle cx="50" cy="30" r="16" fill="${skin}"/>
-        <path d="M34 28c2-14 24-18 34-6 2 3-1 5-5 4-8-3-16 0-22 6-2 2-6 0-5-4z" fill="${hairColor}"/>
-        <path d="M18 62c-12 18-2 40 16 36" fill="none" stroke="${top}" stroke-width="9" stroke-linecap="round"/>
-        <path d="M82 58c14 12 16 34 0 44" fill="none" stroke="${top}" stroke-width="9" stroke-linecap="round"/>
-        <path d="M50 48c-16 4-22 18-20 36 8-4 24-6 40 2 4-18-4-34-20-38z" fill="${top}"/>
-        <path d="M24 86c-8 36 10 78 26 86 18-8 34-52 26-86-16-10-36-10-52 0z" fill="${bottom}"/>
-        <circle cx="64" cy="38" r="3" fill="#c8a45c"/>
-      `
-
-  const box = kind === 'man' ? '0 0 90 190' : '0 0 100 200'
 
   return `
     <div class="celebrate__dancer-wrap" style="--x:${x}%; --d:${delay}s;">
-      <svg class="celebrate__dancer celebrate__dancer--${move}" viewBox="${box}">
-        ${figure}
-      </svg>
+      <img
+        class="celebrate__dancer celebrate__dancer--${move}"
+        src="${src}"
+        alt=""
+        width="360"
+        height="640"
+        decoding="async"
+        draggable="false"
+      />
     </div>
   `
 }
 
 function note(i: number): string {
-  const glyphs = ['♪', '♫', '✦', '✧']
+  const glyphs = ['♪', '♫', '✦', '♩']
   return `<span class="celebrate__note" style="
     --x: ${rand(8, 92)}%;
     --d: ${i * 0.18}s;
@@ -237,15 +208,18 @@ function note(i: number): string {
 }
 
 function renderSangeet(): string {
-  const people = [
-    dancer('woman', 4, 0),
-    dancer('man', 18, 1),
-    dancer('woman', 32, 2),
-    dancer('man', 48, 3),
-    dancer('woman', 62, 4),
-    dancer('man', 76, 5),
-    dancer('woman', 88, 6),
-  ].join('')
+  const cast = [
+    '/images/celebrate/sangeet-dancer-w1.png',
+    '/images/celebrate/sangeet-dancer-m1.png',
+    '/images/celebrate/sangeet-dancer-w2.png',
+    '/images/celebrate/sangeet-dancer-m2.png',
+    '/images/celebrate/sangeet-dancer-w3.png',
+    '/images/celebrate/sangeet-dancer-w4.png',
+    '/images/celebrate/sangeet-dancer-m1.png',
+    '/images/celebrate/sangeet-dancer-w2.png',
+  ]
+  const xs = [2, 14, 27, 40, 53, 66, 78, 90]
+  const people = cast.map((src, i) => dancer(src, xs[i], i)).join('')
 
   const notes = Array.from({ length: 14 }, (_, i) => note(i)).join('')
   const sparkles = Array.from(

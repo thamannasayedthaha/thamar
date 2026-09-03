@@ -66,7 +66,7 @@ function waxSeal(kind: 'yes' | 'afar', symbol: string): string {
 
 export function renderRsvp(config: WeddingConfig): string {
   const choices = config.events
-    .filter((event) => event.theme !== 'nikah' && event.theme !== 'meeting')
+    .filter((event) => event.theme !== 'nikah' && event.theme !== 'meeting' && event.theme !== 'engagement')
     .map((event) => renderEventChoice(event.title, event.date, event.theme))
     .join('')
   const monogram = config.couple.monogram
