@@ -352,7 +352,7 @@
     </style>
   </head>
   <body>
-    <audio id="intro-audio" class="ambient-audio" src="/audio/simply-the-best.mp3" loop preload="auto" playsinline autoplay></audio>
+    <audio id="intro-audio" class="ambient-audio" src="/audio/simply-the-best.mp3" loop preload="auto" playsinline></audio>
     <script>
       (function () {
         var audio = document.getElementById('intro-audio')
@@ -362,18 +362,26 @@
         audio.setAttribute('webkit-playsinline', '')
         var wanted = true
         try { wanted = sessionStorage.getItem('thamar-music-off') !== '1' } catch (e) {}
-        if (!wanted) return
+        if (!wanted) {
+          audio.pause()
+          audio.muted = true
+          return
+        }
 
         var running = function () { return !audio.paused && !audio.ended }
+        var fromToggle = function (event) {
+          var t = event.target
+          return t && t.closest && t.closest('[data-music-toggle]')
+        }
 
         var start = function () {
-          if (running()) return
+          if (!wanted || running()) return
           audio.muted = false
           audio.volume = 0.7
           var p = audio.play()
           if (p && p.catch) {
             p.catch(function () {
-              if (running()) return
+              if (!wanted || running()) return
               audio.muted = true
               var q = audio.play()
               if (q && q.catch) q.catch(function () {})
@@ -381,7 +389,8 @@
           }
         }
 
-        var unlock = function () {
+        var unlock = function (event) {
+          if (!wanted || fromToggle(event)) return
           audio.muted = false
           audio.volume = 0.7
           var p = audio.play()

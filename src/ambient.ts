@@ -29,11 +29,13 @@ function writeMuted(off: boolean): void {
   }
 }
 
+/** Button is on when music is wanted (autoplay / playing), off only after the guest mutes. */
 function syncToggles(): void {
+  const on = wanted
   document.querySelectorAll<HTMLButtonElement>('[data-music-toggle]').forEach((button) => {
-    button.classList.toggle('is-on', wanted)
-    button.setAttribute('aria-pressed', String(wanted))
-    button.setAttribute('aria-label', wanted ? 'Turn music off' : 'Turn music on')
+    button.classList.toggle('is-on', on)
+    button.setAttribute('aria-pressed', String(on))
+    button.setAttribute('aria-label', on ? 'Turn music off' : 'Turn music on')
   })
 }
 
@@ -65,15 +67,24 @@ async function playMutedFallback(): Promise<void> {
 export function playAmbient(): Promise<boolean> {
   ensurePlayer()
   if (!audio || !wanted || ducked) return Promise.resolve(false)
-  if (isAudible()) return Promise.resolve(true)
+  if (isAudible()) {
+    syncToggles()
+    return Promise.resolve(true)
+  }
 
   // Already autoplaying muted — do not unmute here (Chrome pauses it).
   // The gesture unlock path calls unmuteAmbient() instead.
-  if (isRunning() && audio.muted) return Promise.resolve(false)
+  if (isRunning() && audio.muted) {
+    syncToggles()
+    return Promise.resolve(false)
+  }
 
   applyAudible()
   const start = audio.play()
-  if (!start) return Promise.resolve(isAudible())
+  if (!start) {
+    syncToggles()
+    return Promise.resolve(isAudible())
+  }
 
   return start
     .then(() => {
@@ -83,6 +94,7 @@ export function playAmbient(): Promise<boolean> {
     })
     .catch(async () => {
       await playMutedFallback()
+      syncToggles()
       return false
     })
 }
@@ -94,7 +106,7 @@ export function unmuteAmbient(): void {
   if (!audio) return
   applyAudible()
   const start = audio.play()
-  if (start) void start.then(() => syncToggles()).catch(() => {})
+  if (start) void start.then(() => syncToggles()).catch(() => syncToggles())
   else syncToggles()
 }
 
@@ -107,12 +119,17 @@ function bindAudio(el: HTMLAudioElement): void {
   audio.loop = true
   audio.preload = 'auto'
   audio.volume = VOLUME
+  audio.removeAttribute('autoplay')
   audio.setAttribute('playsinline', '')
   audio.setAttribute('webkit-playsinline', '')
   audio.setAttribute('aria-hidden', 'true')
 
   audio.addEventListener('playing', () => {
-    syncToggles()
+    // Early HTML autoplay may start before init; keep the toggle on if we want music.
+    if (wanted) syncToggles()
+  })
+  audio.addEventListener('pause', () => {
+    // Do not flip the toggle off on transient pauses (duck / buffer); only mute preference does.
   })
 }
 
@@ -131,11 +148,18 @@ function ensurePlayer(): void {
   }
 }
 
+function isMusicToggleEvent(event: Event): boolean {
+  const target = event.target
+  return target instanceof Element && Boolean(target.closest('[data-music-toggle]'))
+}
+
 function bindUnlock(): void {
   if (unlockBound) return
   unlockBound = true
 
-  const unlock = () => {
+  const unlock = (event: Event) => {
+    // Let the toggle's own handler own mute/unmute — don't fight it on pointerdown.
+    if (isMusicToggleEvent(event)) return
     unmuteAmbient()
   }
 
@@ -169,6 +193,15 @@ export function unduckAmbient(): void {
 export function initAmbient(): void {
   wanted = !readMuted()
   ensurePlayer()
+
+  // Respect mute: stop any early HTML autoplay. Otherwise adopt already-playing audio as on.
+  if (!wanted) {
+    pause()
+    if (audio) audio.muted = true
+  } else if (audio && isRunning()) {
+    applyAudible()
+  }
+
   syncToggles()
   bindUnlock()
 
@@ -177,22 +210,28 @@ export function initAmbient(): void {
     // Retry while the file buffers — early play often fails only because
     // the element wasn't ready yet.
     const retry = window.setInterval(() => {
-      if (!wanted || ducked || isAudible() || isRunning()) {
+      if (!wanted || ducked || isAudible()) {
         window.clearInterval(retry)
+        syncToggles()
         return
       }
       void playAmbient()
     }, 400)
-    window.setTimeout(() => window.clearInterval(retry), 12000)
+    window.setTimeout(() => {
+      window.clearInterval(retry)
+      syncToggles()
+    }, 12000)
   }
 
   document.querySelectorAll<HTMLButtonElement>('[data-music-toggle]').forEach((button) => {
     button.addEventListener('click', (event) => {
+      event.preventDefault()
       event.stopPropagation()
       if (wanted) {
         wanted = false
         writeMuted(true)
         pause()
+        if (audio) audio.muted = true
       } else {
         wanted = true
         writeMuted(false)
