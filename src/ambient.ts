@@ -1,19 +1,13 @@
-import { wedding } from './config'
-import { loadYouTubeApi, type YtPlayer } from './youtube'
-
 const MUTED_KEY = 'thamar-music-off'
-const VOLUME = 70
-const PLAYER_ID = 'ambient-yt-player'
-const SONG_ID =
-  wedding.soundtrack.tracks.find((track) => track.id === 'she-asked')?.youtubeId ?? 'lVCqH2kl9fI'
+const VOLUME = 0.7
+const SONG_SRC = '/audio/simply-the-best.mp3'
 
 const icons = {
   on: `<svg class="music-toggle__icon music-toggle__icon--on" viewBox="0 0 24 24" aria-hidden="true"><path d="M10 18.2a2.7 2.7 0 1 1-2.4-2.68V7.15l10-2.1v9.48a2.7 2.7 0 1 1-2.4-2.68V7.55L10 8.95z"/></svg>`,
   off: `<svg class="music-toggle__icon music-toggle__icon--off" viewBox="0 0 24 24" aria-hidden="true"><path d="M10 18.2a2.7 2.7 0 1 1-2.4-2.68V7.15l10-2.1v9.48a2.7 2.7 0 1 1-2.4-2.68V7.55L10 8.95z"/><path d="M4.2 5.1 19.8 18.9" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>`,
 }
 
-let player: YtPlayer | null = null
-let ready = false
+let audio: HTMLAudioElement | null = null
 let playing = false
 let wanted = true
 let ducked = false
@@ -57,95 +51,55 @@ function syncToggles(): void {
 }
 
 function tryPlay(): void {
-  if (!player || !ready || !wanted || ducked) return
-  try {
-    player.unMute()
-    player.setVolume(VOLUME)
-    player.playVideo()
-  } catch {
-    showCues()
+  if (!audio || !wanted || ducked) return
+  audio.muted = false
+  audio.volume = VOLUME
+  const start = audio.play()
+  if (start) {
+    void start
+      .then(() => {
+        playing = true
+        hideCues()
+        syncToggles()
+      })
+      .catch(() => {
+        playing = false
+        if (wanted && !ducked) showCues()
+      })
   }
 }
 
 function pause(): void {
-  try {
-    player?.pauseVideo()
-  } catch {
-    /* player may already be gone */
-  }
+  audio?.pause()
+  playing = false
 }
 
 function ensurePlayer(): void {
-  if (player || document.getElementById(PLAYER_ID)) return
+  if (audio) return
 
-  const host = document.createElement('div')
-  host.className = 'ambient-yt'
-  host.setAttribute('aria-hidden', 'true')
-  host.innerHTML = `<div id="${PLAYER_ID}"></div>`
-  document.body.appendChild(host)
+  audio = new Audio(SONG_SRC)
+  audio.className = 'ambient-audio'
+  audio.loop = true
+  audio.preload = 'auto'
+  audio.setAttribute('playsinline', '')
+  audio.setAttribute('aria-hidden', 'true')
+  audio.volume = VOLUME
+  document.body.appendChild(audio)
 
-  void loadYouTubeApi()
-    .then((YT) => {
-      player = new YT.Player(PLAYER_ID, {
-        height: '1',
-        width: '1',
-        videoId: SONG_ID,
-        playerVars: {
-          autoplay: wanted ? 1 : 0,
-          controls: 0,
-          disablekb: 1,
-          fs: 0,
-          loop: 1,
-          playlist: SONG_ID,
-          modestbranding: 1,
-          playsinline: 1,
-          rel: 0,
-          origin: window.location.origin,
-        },
-        events: {
-          onReady: (event) => {
-            ready = true
-            event.target.setVolume(VOLUME)
-            if (wanted && !ducked) event.target.playVideo()
-          },
-          onStateChange: (event) => {
-            if (event.data === YT.PlayerState.PLAYING) {
-              playing = true
-              hideCues()
-              syncToggles()
-              return
-            }
+  audio.addEventListener('playing', () => {
+    playing = true
+    hideCues()
+    syncToggles()
+  })
+  audio.addEventListener('pause', () => {
+    playing = false
+  })
+  audio.addEventListener('error', () => {
+    playing = false
+    if (wanted && !ducked) showCues()
+  })
 
-            if (event.data === YT.PlayerState.PAUSED) {
-              playing = false
-              syncToggles()
-              return
-            }
-
-            if (event.data === YT.PlayerState.ENDED) {
-              playing = false
-              syncToggles()
-              if (wanted && !ducked) {
-                try {
-                  event.target.seekTo(0, true)
-                  event.target.playVideo()
-                } catch {
-                  /* ignore */
-                }
-              }
-            }
-          },
-          onError: () => {
-            playing = false
-            syncToggles()
-            if (wanted && !ducked) showCues()
-          },
-        },
-      })
-    })
-    .catch(() => {
-      if (wanted) showCues()
-    })
+  if (wanted && !ducked) tryPlay()
 }
 
 export function renderMusicToggle(): string {
@@ -220,7 +174,6 @@ export function initAmbient(): void {
         wanted = false
         writeMuted(true)
         pause()
-        playing = false
       } else {
         wanted = true
         writeMuted(false)

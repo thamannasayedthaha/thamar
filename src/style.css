@@ -3648,6 +3648,10 @@ html[data-theme='dark'] .dresscode__note {
   transition: transform 0.6s ease;
 }
 
+.years-timeline__image[src*='years2025-09-23-14'] {
+  object-position: center 18%;
+}
+
 .years-timeline__stop:hover .years-timeline__image {
   transform: scale(1.03);
 }
@@ -7569,7 +7573,8 @@ html[data-theme='dark'] .stars {
   }
 }
 
-/* Loader soundtrack — Billianne under the envelope, then throughout the visit */
+/* Intro song — hidden local audio, plus the loader tap cue */
+.ambient-audio,
 .ambient-yt,
 .loader__yt {
   position: absolute;
