@@ -48,7 +48,7 @@ function showCues(): void {
 }
 
 function syncToggles(): void {
-  const on = wanted && playing && !ducked
+  const on = wanted
   document.querySelectorAll<HTMLButtonElement>('[data-music-toggle]').forEach((button) => {
     button.classList.toggle('is-on', on)
     button.setAttribute('aria-pressed', String(on))
@@ -59,6 +59,7 @@ function syncToggles(): void {
 function tryPlay(): void {
   if (!player || !ready || !wanted || ducked) return
   try {
+    player.unMute()
     player.setVolume(VOLUME)
     player.playVideo()
   } catch {
@@ -149,7 +150,7 @@ function ensurePlayer(): void {
 
 export function renderMusicToggle(): string {
   return `
-    <button type="button" class="music-toggle" data-music-toggle aria-pressed="false" aria-label="Turn music on">
+    <button type="button" class="music-toggle is-on" data-music-toggle aria-pressed="true" aria-label="Turn music off">
       ${icons.on}
       ${icons.off}
     </button>
@@ -206,10 +207,16 @@ export function initAmbient(): void {
   ensurePlayer()
   syncToggles()
 
+  const unlock = () => {
+    if (wanted) tryPlay()
+  }
+  document.addEventListener('pointerdown', unlock)
+  document.addEventListener('keydown', unlock)
+
   document.querySelectorAll<HTMLButtonElement>('[data-music-toggle]').forEach((button) => {
-    button.addEventListener('click', () => {
-      const audible = wanted && playing && !ducked
-      if (audible) {
+    button.addEventListener('click', (event) => {
+      event.stopPropagation()
+      if (wanted) {
         wanted = false
         writeMuted(true)
         pause()

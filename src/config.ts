@@ -71,7 +71,7 @@ export const wedding: WeddingConfig = {
       venue: "Thamanna's Home",
       address: 'Thrissur',
       description:
-        'An afternoon of turmeric, laughter, and blessings. Come ready to be coloured.',
+        'An afternoon of flowers, laughter, and blessings. Come ready for a shower of petals.',
       theme: 'haldi',
       icon: '✿',
       dressCode: 'Shades of green',
