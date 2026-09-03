@@ -44,8 +44,8 @@ function waxSeal(kind: 'yes' | 'afar', symbol: string): string {
   const gid = `rsvp-wax-${kind}`
   const stops =
     kind === 'yes'
-      ? `<stop offset="0%" stop-color="#bbccb0"/><stop offset="55%" stop-color="#657a5c"/><stop offset="100%" stop-color="#3f4d3a"/>`
-      : `<stop offset="0%" stop-color="#c4a4a2"/><stop offset="55%" stop-color="#8f7875"/><stop offset="100%" stop-color="#5a4c4a"/>`
+      ? `<stop class="rsvp__stamp-stop rsvp__stamp-stop--hi" offset="0%" stop-color="#bbccb0"/><stop class="rsvp__stamp-stop rsvp__stamp-stop--mid" offset="55%" stop-color="#657a5c"/><stop class="rsvp__stamp-stop rsvp__stamp-stop--lo" offset="100%" stop-color="#3f4d3a"/>`
+      : `<stop class="rsvp__stamp-stop rsvp__stamp-stop--hi" offset="0%" stop-color="#c4a4a2"/><stop class="rsvp__stamp-stop rsvp__stamp-stop--mid" offset="55%" stop-color="#8f7875"/><stop class="rsvp__stamp-stop rsvp__stamp-stop--lo" offset="100%" stop-color="#5a4c4a"/>`
 
   return `
     <span class="rsvp__stamp" aria-hidden="true">

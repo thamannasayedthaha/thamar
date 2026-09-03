@@ -13,6 +13,17 @@ export function getTheme(): Theme {
   return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
 }
 
+/** Swap any `[data-src-light]` / `[data-src-dark]` images to match the active theme. */
+export function syncThemeImages(theme: Theme = getTheme()): void {
+  const dark = theme === 'dark'
+  document.querySelectorAll<HTMLImageElement>('[data-src-light][data-src-dark]').forEach((img) => {
+    const src = dark ? img.dataset.srcDark : img.dataset.srcLight
+    if (!src) return
+    const current = img.getAttribute('src')
+    if (current !== src) img.src = src
+  })
+}
+
 export function applyTheme(theme: Theme, persist = true): void {
   const root = document.documentElement
   if (root.dataset.theme !== theme) {
@@ -28,6 +39,7 @@ export function applyTheme(theme: Theme, persist = true): void {
   }
 
   syncToggle(theme)
+  syncThemeImages(theme)
 }
 
 function syncToggle(theme: Theme): void {

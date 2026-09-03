@@ -1,4 +1,4 @@
-import { attachAmbientCue } from '../ambient'
+import { playAmbient } from '../ambient'
 
 const OPENED_KEY = 'thamar-opened'
 
@@ -89,21 +89,25 @@ export function initLoader(): void {
 
   if (alreadyOpened()) {
     hideLoader(root)
+    void playAmbient()
     return
   }
 
   const stopMessages = cycleMessages(root)
-  const releaseCue = attachAmbientCue(root)
+  void playAmbient()
 
   const dismiss = () => {
     if (root.classList.contains('is-done')) return
     markOpened()
     stopMessages()
-    releaseCue()
     root.classList.add('is-done')
     document.documentElement.classList.remove('is-loading')
     window.setTimeout(() => root.remove(), 800)
   }
 
-  void whenReady().then(dismiss)
+  void whenReady().then(async () => {
+    stopMessages()
+    await playAmbient()
+    dismiss()
+  })
 }

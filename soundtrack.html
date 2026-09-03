@@ -48,6 +48,9 @@
     <title>Soundtracks — Thamanna & Samar</title>
     <style>
       html.is-loading { overflow: hidden; }
+      #intro-audio {
+        position: absolute; width: 0; height: 0; opacity: 0; pointer-events: none;
+      }
       html.is-loaded #site-loader { display: none !important; }
       .loader {
         position: fixed; inset: 0; z-index: 200; overflow: hidden;
@@ -114,11 +117,11 @@
       }
       /* Clips the card at the envelope's bottom edge while letting it rise past the top. */
       .loader__slot {
-        position: absolute; left: 6.5%; right: 6.5%; top: -78%; bottom: 0; z-index: 2;
+        position: absolute; left: 6.5%; right: 6.5%; top: -105%; bottom: 0; z-index: 2;
         overflow: hidden; pointer-events: none;
       }
       .loader__card {
-        position: absolute; left: 0; right: 0; bottom: 0; height: 70%; overflow: hidden;
+        position: absolute; left: 0; right: 0; bottom: 0; height: 60%; overflow: hidden;
         display: grid; align-content: start; justify-items: center; gap: 0.28rem;
         padding: 0.62rem 0.85rem 0; border-radius: 0.22rem 0.22rem 0 0; text-align: center;
         background: linear-gradient(180deg, #fffefb, #fdf8f0);
@@ -349,6 +352,50 @@
     </style>
   </head>
   <body>
+    <audio id="intro-audio" class="ambient-audio" src="/audio/simply-the-best.mp3" loop preload="auto" playsinline autoplay></audio>
+    <script>
+      (function () {
+        var audio = document.getElementById('intro-audio')
+        if (!audio) return
+        audio.volume = 0.7
+        audio.setAttribute('playsinline', '')
+        audio.setAttribute('webkit-playsinline', '')
+        var wanted = true
+        try { wanted = sessionStorage.getItem('thamar-music-off') !== '1' } catch (e) {}
+        if (!wanted) return
+
+        var running = function () { return !audio.paused && !audio.ended }
+
+        var start = function () {
+          if (running()) return
+          audio.muted = false
+          audio.volume = 0.7
+          var p = audio.play()
+          if (p && p.catch) {
+            p.catch(function () {
+              if (running()) return
+              audio.muted = true
+              var q = audio.play()
+              if (q && q.catch) q.catch(function () {})
+            })
+          }
+        }
+
+        var unlock = function () {
+          audio.muted = false
+          audio.volume = 0.7
+          var p = audio.play()
+          if (p && p.catch) p.catch(function () {})
+        }
+
+        start()
+        audio.addEventListener('canplay', start)
+        audio.addEventListener('canplaythrough', start, { once: true })
+        document.addEventListener('pointerdown', unlock, true)
+        document.addEventListener('touchstart', unlock, { capture: true, passive: true })
+        document.addEventListener('keydown', unlock, true)
+      })()
+    </script>
     <div id="site-loader" class="loader" role="status" aria-live="polite" aria-label="Opening the invitation">
       <div class="loader__glow" aria-hidden="true"></div>
       <div class="loader__petals" aria-hidden="true">

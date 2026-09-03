@@ -8,9 +8,9 @@ const icons = {
 }
 
 let audio: HTMLAudioElement | null = null
-let playing = false
 let wanted = true
 let ducked = false
+let unlockBound = false
 
 function readMuted(): boolean {
   try {
@@ -29,77 +29,119 @@ function writeMuted(off: boolean): void {
   }
 }
 
-function hideCues(): void {
-  document.querySelectorAll<HTMLElement>('.loader__song').forEach((cue) => {
-    cue.hidden = true
-  })
-}
-
-function showCues(): void {
-  document.querySelectorAll<HTMLElement>('.loader__song').forEach((cue) => {
-    cue.hidden = false
-  })
-}
-
 function syncToggles(): void {
-  const on = wanted
   document.querySelectorAll<HTMLButtonElement>('[data-music-toggle]').forEach((button) => {
-    button.classList.toggle('is-on', on)
-    button.setAttribute('aria-pressed', String(on))
-    button.setAttribute('aria-label', on ? 'Turn music off' : 'Turn music on')
+    button.classList.toggle('is-on', wanted)
+    button.setAttribute('aria-pressed', String(wanted))
+    button.setAttribute('aria-label', wanted ? 'Turn music off' : 'Turn music on')
   })
 }
 
-function tryPlay(): void {
-  if (!audio || !wanted || ducked) return
+function isRunning(): boolean {
+  return Boolean(audio && !audio.paused && !audio.ended)
+}
+
+function isAudible(): boolean {
+  return Boolean(isRunning() && audio && !audio.muted && audio.volume > 0)
+}
+
+function applyAudible(): void {
+  if (!audio) return
   audio.muted = false
   audio.volume = VOLUME
-  const start = audio.play()
-  if (start) {
-    void start
-      .then(() => {
-        playing = true
-        hideCues()
-        syncToggles()
-      })
-      .catch(() => {
-        playing = false
-        if (wanted && !ducked) showCues()
-      })
+}
+
+async function playMutedFallback(): Promise<void> {
+  if (!audio || !wanted || ducked || isRunning()) return
+  try {
+    audio.muted = true
+    await audio.play()
+  } catch {
+    /* still blocked or not ready */
   }
+}
+
+/** Attempt playback; resolves true when sound is actually audible. */
+export function playAmbient(): Promise<boolean> {
+  ensurePlayer()
+  if (!audio || !wanted || ducked) return Promise.resolve(false)
+  if (isAudible()) return Promise.resolve(true)
+
+  // Already autoplaying muted — do not unmute here (Chrome pauses it).
+  // The gesture unlock path calls unmuteAmbient() instead.
+  if (isRunning() && audio.muted) return Promise.resolve(false)
+
+  applyAudible()
+  const start = audio.play()
+  if (!start) return Promise.resolve(isAudible())
+
+  return start
+    .then(() => {
+      applyAudible()
+      syncToggles()
+      return isAudible()
+    })
+    .catch(async () => {
+      await playMutedFallback()
+      return false
+    })
+}
+
+/** Unmute + play inside a user-gesture turn. */
+export function unmuteAmbient(): void {
+  if (!wanted || ducked) return
+  ensurePlayer()
+  if (!audio) return
+  applyAudible()
+  const start = audio.play()
+  if (start) void start.then(() => syncToggles()).catch(() => {})
+  else syncToggles()
 }
 
 function pause(): void {
   audio?.pause()
-  playing = false
+}
+
+function bindAudio(el: HTMLAudioElement): void {
+  audio = el
+  audio.loop = true
+  audio.preload = 'auto'
+  audio.volume = VOLUME
+  audio.setAttribute('playsinline', '')
+  audio.setAttribute('webkit-playsinline', '')
+  audio.setAttribute('aria-hidden', 'true')
+
+  audio.addEventListener('playing', () => {
+    syncToggles()
+  })
 }
 
 function ensurePlayer(): void {
   if (audio) return
 
-  audio = new Audio(SONG_SRC)
-  audio.className = 'ambient-audio'
-  audio.loop = true
-  audio.preload = 'auto'
-  audio.setAttribute('playsinline', '')
-  audio.setAttribute('aria-hidden', 'true')
-  audio.volume = VOLUME
-  document.body.appendChild(audio)
+  const existing = document.querySelector<HTMLAudioElement>('#intro-audio')
+  if (existing) {
+    bindAudio(existing)
+  } else {
+    const created = new Audio(SONG_SRC)
+    created.id = 'intro-audio'
+    created.className = 'ambient-audio'
+    document.body.appendChild(created)
+    bindAudio(created)
+  }
+}
 
-  audio.addEventListener('playing', () => {
-    playing = true
-    hideCues()
-    syncToggles()
-  })
-  audio.addEventListener('pause', () => {
-    playing = false
-  })
-  audio.addEventListener('error', () => {
-    playing = false
-    if (wanted && !ducked) showCues()
-  })
+function bindUnlock(): void {
+  if (unlockBound) return
+  unlockBound = true
 
-  if (wanted && !ducked) tryPlay()
+  const unlock = () => {
+    unmuteAmbient()
+  }
+
+  document.addEventListener('pointerdown', unlock, true)
+  document.addEventListener('touchstart', unlock, { capture: true, passive: true })
+  document.addEventListener('keydown', unlock, true)
 }
 
 export function renderMusicToggle(): string {
@@ -111,38 +153,6 @@ export function renderMusicToggle(): string {
   `
 }
 
-export function attachAmbientCue(root: HTMLElement): () => void {
-  const cue = document.createElement('button')
-  cue.type = 'button'
-  cue.className = 'loader__song'
-  cue.hidden = true
-  cue.setAttribute('aria-label', 'Play Simply the Best by Billianne')
-  cue.innerHTML = '<span aria-hidden="true">♪</span> Simply the Best — Billianne'
-  root.appendChild(cue)
-
-  const onGesture = () => {
-    if (!wanted || ducked) return
-    tryPlay()
-    if (playing) cue.hidden = true
-  }
-
-  cue.addEventListener('click', (event) => {
-    event.stopPropagation()
-    onGesture()
-  })
-  root.addEventListener('pointerdown', onGesture)
-
-  const timer = window.setTimeout(() => {
-    if (!playing && wanted && !ducked) cue.hidden = false
-  }, 900)
-
-  return () => {
-    window.clearTimeout(timer)
-    root.removeEventListener('pointerdown', onGesture)
-    cue.remove()
-  }
-}
-
 export function duckAmbient(): void {
   ducked = true
   pause()
@@ -152,7 +162,7 @@ export function duckAmbient(): void {
 export function unduckAmbient(): void {
   if (!ducked) return
   ducked = false
-  if (wanted) tryPlay()
+  if (wanted) void playAmbient()
   syncToggles()
 }
 
@@ -160,12 +170,21 @@ export function initAmbient(): void {
   wanted = !readMuted()
   ensurePlayer()
   syncToggles()
+  bindUnlock()
 
-  const unlock = () => {
-    if (wanted) tryPlay()
+  if (wanted && !ducked) {
+    void playAmbient()
+    // Retry while the file buffers — early play often fails only because
+    // the element wasn't ready yet.
+    const retry = window.setInterval(() => {
+      if (!wanted || ducked || isAudible() || isRunning()) {
+        window.clearInterval(retry)
+        return
+      }
+      void playAmbient()
+    }, 400)
+    window.setTimeout(() => window.clearInterval(retry), 12000)
   }
-  document.addEventListener('pointerdown', unlock)
-  document.addEventListener('keydown', unlock)
 
   document.querySelectorAll<HTMLButtonElement>('[data-music-toggle]').forEach((button) => {
     button.addEventListener('click', (event) => {
@@ -178,7 +197,7 @@ export function initAmbient(): void {
         wanted = true
         writeMuted(false)
         ducked = false
-        tryPlay()
+        unmuteAmbient()
       }
       syncToggles()
     })

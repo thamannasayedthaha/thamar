@@ -136,7 +136,7 @@ export type SoundtrackTrack = {
 }
 
 export type PhotoUploadConfig = {
-  /** Shared album or upload folder link the QR code points to. Empty disables the QR. */
+  /** Shared album or upload folder link. Shown as a direct open action; scanner can also open scanned URLs. */
   url: string
   note: string
 }

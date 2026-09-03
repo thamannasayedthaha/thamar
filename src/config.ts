@@ -283,7 +283,7 @@ export const wedding: WeddingConfig = {
   },
   photoUpload: {
     url: '',
-    note: 'Took a photo you love? Scan the code and drop it into our shared album — we want to see the night through your eyes.',
+    note: 'Took a photo you love? Scan the album QR and drop it in — we want to see the night through your eyes.',
   },
   rsvp: {
     /** Optional Formspree URL. Leave empty to keep replies in the browser for now. */

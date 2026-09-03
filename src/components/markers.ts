@@ -1,41 +1,61 @@
 import type { EventTheme } from '../types'
 
-const MARKERS: Record<EventTheme, { src: string; label: string }> = {
+const MARKERS: Record<EventTheme, { light: string; dark: string; label: string; labelDark: string }> = {
   meeting: {
-    src: '/images/markers/marker-meeting.png',
+    light: '/images/markers/marker-meeting.png',
+    dark: '/images/markers/marker-meeting-dark.png',
     label: 'Watercolour hills',
+    labelDark: 'Celestial hills under the moon',
   },
   engagement: {
-    src: '/images/markers/marker-engagement.png',
+    light: '/images/markers/marker-engagement.png',
+    dark: '/images/markers/marker-engagement-dark.png',
     label: 'Watercolour rings',
+    labelDark: 'Celestial rings and stars',
   },
   nikah: {
-    src: '/images/markers/marker-nikah.png',
+    light: '/images/markers/marker-nikah.png',
+    dark: '/images/markers/marker-nikah-dark.png',
     label: 'Watercolour mosque',
+    labelDark: 'Celestial mosque and crescent',
   },
   haldi: {
-    src: '/images/markers/marker-haldi.png',
+    light: '/images/markers/marker-haldi.png',
+    dark: '/images/markers/marker-haldi-dark.png',
     label: 'Watercolour marigold',
+    labelDark: 'Celestial full moon',
   },
   mehendi: {
-    src: '/images/markers/marker-mehendi.png',
+    light: '/images/markers/marker-mehendi.png',
+    dark: '/images/markers/marker-mehendi-dark.png',
     label: 'Watercolour henna motif',
+    labelDark: 'Celestial henna motif',
   },
   sangeet: {
-    src: '/images/markers/marker-sangeet.png',
+    light: '/images/markers/marker-sangeet.png',
+    dark: '/images/markers/marker-sangeet-dark.png',
     label: 'Watercolour music notes',
+    labelDark: 'Celestial music notes',
   },
   reception: {
-    src: '/images/markers/marker-reception.png',
+    light: '/images/markers/marker-reception.png',
+    dark: '/images/markers/marker-reception-dark.png',
     label: 'Watercolour star',
+    labelDark: 'Celestial starburst',
   },
 }
 
+function isDarkTheme(): boolean {
+  return document.documentElement.dataset.theme === 'dark'
+}
+
 export function getMarkerSrc(theme: EventTheme): string {
-  return MARKERS[theme].src
+  const marker = MARKERS[theme]
+  return isDarkTheme() ? marker.dark : marker.light
 }
 
 export function renderEventMarker(theme: EventTheme): string {
   const marker = MARKERS[theme]
-  return `<img class="event__marker-art" src="${marker.src}" alt="" width="384" height="384" decoding="async" />`
+  const src = isDarkTheme() ? marker.dark : marker.light
+  return `<img class="event__marker-art" src="${src}" data-src-light="${marker.light}" data-src-dark="${marker.dark}" alt="" width="384" height="384" decoding="async" />`
 }
