@@ -67,7 +67,7 @@ function renderYearsStop(image: GalleryImage, index: number): string {
       <span class="years-timeline__dot" aria-hidden="true"></span>
       <figure class="years-timeline__card">
         <div class="years-timeline__frame">
-          <img class="years-timeline__image" src="${image.src}" alt="${image.alt}" loading="lazy" />
+          <img class="years-timeline__image" src="${image.src}" alt="${image.alt}" loading="${index < 4 ? 'eager' : 'lazy'}" decoding="async" />
         </div>
         ${title}
       </figure>
