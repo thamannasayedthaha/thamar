@@ -348,10 +348,16 @@ export function initMixtape(tracks: SoundtrackTrack[], page: MixtapePage): void 
   pauseForAmbient = pauseOnly
 
   deckPlay?.addEventListener('click', togglePlay)
-  miniPlay?.addEventListener('click', togglePlay)
+  miniPlay?.addEventListener('click', (event) => {
+    event.stopPropagation()
+    togglePlay()
+  })
 
   deck?.querySelector('[data-deck-stop]')?.addEventListener('click', stop)
-  mini?.querySelector('[data-mixtape-stop]')?.addEventListener('click', stop)
+  mini?.querySelector('[data-mixtape-stop]')?.addEventListener('click', (event) => {
+    event.stopPropagation()
+    stop()
+  })
   closeBtn?.addEventListener('click', (event) => {
     event.preventDefault()
     event.stopPropagation()
@@ -360,13 +366,24 @@ export function initMixtape(tracks: SoundtrackTrack[], page: MixtapePage): void 
 
   deck?.querySelector('[data-deck-prev]')?.addEventListener('click', prev)
   deck?.querySelector('[data-deck-next]')?.addEventListener('click', next)
-  mini?.querySelector('[data-mixtape-prev]')?.addEventListener('click', prev)
-  mini?.querySelector('[data-mixtape-next]')?.addEventListener('click', next)
+  mini?.querySelector('[data-mixtape-prev]')?.addEventListener('click', (event) => {
+    event.stopPropagation()
+    prev()
+  })
+  mini?.querySelector('[data-mixtape-next]')?.addEventListener('click', (event) => {
+    event.stopPropagation()
+    next()
+  })
 
   mini?.addEventListener('click', (event) => {
-    const target = event.target
-    if (!(target instanceof Element)) return
-    if (target.closest('[data-mixtape-controls]')) return
+    // Icon swaps on play/pause detach the original target, so check the full path.
+    const path = event.composedPath()
+    const hitControl = path.some(
+      (node) =>
+        node instanceof Element &&
+        Boolean(node.closest('[data-mixtape-controls], .mixtape-mini__key')),
+    )
+    if (hitControl) return
 
     // Touch: first tap reveals the outside close; second tap opens soundtrack.
     if (!canHover.matches && !armed) {

@@ -377,10 +377,43 @@
           return t && t.closest && t.closest('[data-music-toggle]')
         }
 
+        var didRestore = false
+        var restore = function () {
+          if (didRestore) return
+          var t = 0
+          try {
+            t = parseFloat(sessionStorage.getItem('thamar-ambient-time') || '0')
+          } catch (e) {}
+          if (!(t > 0.25)) {
+            didRestore = true
+            return
+          }
+          var apply = function () {
+            if (didRestore) return
+            didRestore = true
+            try {
+              if (Math.abs(audio.currentTime - t) > 0.35) audio.currentTime = t
+            } catch (e) {
+              didRestore = false
+            }
+          }
+          if (audio.readyState >= 1) apply()
+          else audio.addEventListener('loadedmetadata', apply, { once: true })
+        }
+
+        var persist = function () {
+          try {
+            if (audio && isFinite(audio.currentTime) && audio.currentTime >= 0) {
+              sessionStorage.setItem('thamar-ambient-time', String(audio.currentTime))
+            }
+          } catch (e) {}
+        }
+
         var start = function () {
           if (!wanted || audible()) return
           // Never fall back to muted — that locks the song silent.
           if (!audio.paused && audio.muted) audio.pause()
+          restore()
           audio.muted = false
           audio.volume = 0.7
           var p = audio.play()
@@ -389,11 +422,20 @@
 
         var unlock = function (event) {
           if (!wanted || fromToggle(event)) return
+          restore()
           audio.muted = false
           audio.volume = 0.7
           var p = audio.play()
           if (p && p.catch) p.catch(function () {})
         }
+
+        window.addEventListener('pagehide', persist)
+        audio.addEventListener('timeupdate', function () {
+          if (!audio._lastPersist || performance.now() - audio._lastPersist > 800) {
+            audio._lastPersist = performance.now()
+            persist()
+          }
+        })
 
         start()
         audio.addEventListener('canplay', start)

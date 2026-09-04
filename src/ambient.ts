@@ -1,6 +1,7 @@
 import { isMixtapeSessionPlaying, pauseMixtapePlayback } from './mixtape'
 
 const MUTED_KEY = 'thamar-music-off'
+const TIME_KEY = 'thamar-ambient-time'
 const VOLUME = 0.7
 const SONG_SRC = '/audio/simply-the-best.mp3'
 
@@ -13,6 +14,8 @@ let audio: HTMLAudioElement | null = null
 let wanted = true
 let ducked = false
 let unlockBound = false
+let persistBound = false
+let restored = false
 
 function readMuted(): boolean {
   try {
@@ -29,6 +32,67 @@ function writeMuted(off: boolean): void {
   } catch {
     /* preference still applies for this visit */
   }
+}
+
+function readSavedTime(): number {
+  try {
+    const n = Number(sessionStorage.getItem(TIME_KEY))
+    return Number.isFinite(n) && n > 0.25 ? n : 0
+  } catch {
+    return 0
+  }
+}
+
+function persistTime(): void {
+  if (!audio) return
+  const t = audio.currentTime
+  if (!Number.isFinite(t) || t < 0) return
+  try {
+    sessionStorage.setItem(TIME_KEY, String(t))
+  } catch {
+    /* ignore quota / private mode */
+  }
+}
+
+/** Resume where the song left off on the previous page — once per load. */
+function restoreTime(): void {
+  if (!audio || restored) return
+  const saved = readSavedTime()
+  if (!saved) {
+    restored = true
+    return
+  }
+
+  const apply = () => {
+    if (!audio || restored) return
+    restored = true
+    try {
+      if (Math.abs(audio.currentTime - saved) > 0.35) audio.currentTime = saved
+    } catch {
+      restored = false
+    }
+  }
+
+  if (audio.readyState >= 1) apply()
+  else audio.addEventListener('loadedmetadata', apply, { once: true })
+}
+
+function bindPersist(): void {
+  if (persistBound || !audio) return
+  persistBound = true
+
+  let lastWrite = 0
+  audio.addEventListener('timeupdate', () => {
+    const now = performance.now()
+    if (now - lastWrite < 800) return
+    lastWrite = now
+    persistTime()
+  })
+
+  window.addEventListener('pagehide', persistTime)
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden') persistTime()
+  })
 }
 
 function syncToggles(): void {
@@ -55,7 +119,7 @@ function applyAudible(): void {
 }
 
 /**
- * Start (or restart) audible playback. Never falls back to muted —
+ * Start (or continue) audible playback. Never falls back to muted —
  * muted autoplay gets stuck silent in Chrome until a gesture.
  */
 export function playAmbient(): Promise<boolean> {
@@ -71,6 +135,7 @@ export function playAmbient(): Promise<boolean> {
     audio.pause()
   }
 
+  restoreTime()
   applyAudible()
   const start = audio.play()
   if (!start) {
@@ -95,6 +160,7 @@ export function unmuteAmbient(): void {
   if (!wanted || ducked) return
   ensurePlayer()
   if (!audio) return
+  restoreTime()
   applyAudible()
   const start = audio.play()
   if (start) void start.then(() => syncToggles()).catch(() => syncToggles())
@@ -102,6 +168,7 @@ export function unmuteAmbient(): void {
 }
 
 function pause(): void {
+  persistTime()
   audio?.pause()
 }
 
@@ -118,6 +185,9 @@ function bindAudio(el: HTMLAudioElement): void {
   audio.addEventListener('playing', () => {
     if (wanted && audio && !audio.muted) syncToggles()
   })
+
+  restoreTime()
+  bindPersist()
 }
 
 function ensurePlayer(): void {
@@ -192,6 +262,7 @@ export function initAmbient(): void {
       audio.pause()
       audio.muted = false
     }
+    restoreTime()
     applyAudible()
   }
 

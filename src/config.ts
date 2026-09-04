@@ -221,7 +221,7 @@ export const wedding: WeddingConfig = {
         date: '2025-05-31T10:30:00+05:30',
         author: 'Thamanna & Samar',
         handle: '@itsa.me.samario',
-        body: 'Nikah morning. Thamanna is getting ready and I am doing a terrible job of acting normal.',
+        body: 'Mahar ceremony on Nikah day. Quiet vows, full hearts, and neither of us acting normal about it.',
         image: '/images/gallery/2025-09-25(3).jpg',
         imageAlt: 'Thamanna and Samar',
         gallery: ['/images/gallery/2025-09-25(7).jpg', '/images/gallery/2025-09-25(11).jpg'],

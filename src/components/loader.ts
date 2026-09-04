@@ -2,8 +2,9 @@ import { playAmbient, unmuteAmbient } from '../ambient'
 
 const OPENED_KEY = 'thamar-opened'
 
-/** Auto-open if the guest never taps. */
-const AUTO_OPEN_MS = 7000
+/** Hold long enough for a couple envelope cycles, even if the page is ready sooner. */
+const MIN_VISIBLE_MS = 10000
+const MAX_WAIT_MS = 10600
 const MESSAGE_MS = 950
 const SWAP_MS = 350
 
@@ -15,9 +16,28 @@ const MESSAGES = [
   'Setting a place for you…',
   'Tying the ribbon…',
   'Warming up the sangeet stage…',
-  'Tap to open anytime…',
+  'Counting down to 04 · 10 · 2026…',
   'Almost yours…',
 ]
+
+function wait(ms: number): Promise<void> {
+  return new Promise((resolve) => window.setTimeout(resolve, ms))
+}
+
+async function whenReady(): Promise<void> {
+  const started = performance.now()
+
+  const fonts = document.fonts?.ready ?? Promise.resolve()
+  const loaded =
+    document.readyState === 'complete'
+      ? Promise.resolve()
+      : new Promise<void>((resolve) => window.addEventListener('load', () => resolve(), { once: true }))
+
+  await Promise.race([Promise.all([fonts, loaded]), wait(MAX_WAIT_MS)])
+
+  const elapsed = performance.now() - started
+  if (elapsed < MIN_VISIBLE_MS) await wait(MIN_VISIBLE_MS - elapsed)
+}
 
 function cycleMessages(root: HTMLElement): () => void {
   const msg = root.querySelector<HTMLElement>('.loader__msg')
@@ -68,22 +88,50 @@ function ensureOpenStyles(): void {
   const style = document.createElement('style')
   style.id = 'loader-open-style'
   style.textContent = `
-    .loader.is-openable { cursor: pointer; }
     .loader__open {
-      appearance: none; border: 0; background: transparent; cursor: pointer;
-      margin: 0; padding: 0.15rem 0.4rem; min-height: 1.5em;
+      position: absolute;
+      z-index: 8;
+      left: 50%;
+      bottom: max(1.4rem, env(safe-area-inset-bottom, 0px) + 1rem);
+      transform: translateX(-50%);
+      appearance: none;
+      border: 1px solid rgba(200, 164, 92, 0.42);
+      border-radius: 0.28rem;
+      background: rgba(251, 249, 244, 0.88);
+      box-shadow: 0 10px 24px -14px rgba(106, 91, 89, 0.45);
+      cursor: pointer;
+      margin: 0;
+      padding: 0.72rem 1.35rem;
       font-family: 'Source Serif 4', Georgia, serif;
-      font-size: 0.68rem; font-weight: 600; letter-spacing: 0.16em; text-indent: 0.16em;
-      text-transform: uppercase; color: #a08256;
-      transition: opacity 0.4s ease, color 0.25s ease;
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.16em;
+      text-indent: 0.16em;
+      text-transform: uppercase;
+      color: #6a5b59;
+      transition: opacity 0.4s ease, color 0.25s ease, background 0.25s ease, border-color 0.25s ease;
       animation: loader-fade 1s ease 1.1s backwards;
     }
     .loader__open:hover,
-    .loader__open:focus-visible { color: #6a5b59; outline: none; }
-    .loader.is-done .loader__open { opacity: 0; }
-    html[data-theme='dark'] .loader__open { color: #c8a45c; }
+    .loader__open:focus-visible {
+      color: #1b1c19;
+      border-color: rgba(200, 164, 92, 0.7);
+      background: rgba(255, 252, 247, 0.96);
+      outline: none;
+    }
+    .loader.is-done .loader__open { opacity: 0; pointer-events: none; }
+    html[data-theme='dark'] .loader__open {
+      color: #e8d48a;
+      border-color: rgba(232, 212, 138, 0.34);
+      background: rgba(12, 18, 36, 0.78);
+      box-shadow: 0 10px 24px -12px rgba(0, 0, 0, 0.65);
+    }
     html[data-theme='dark'] .loader__open:hover,
-    html[data-theme='dark'] .loader__open:focus-visible { color: #e8d48a; }
+    html[data-theme='dark'] .loader__open:focus-visible {
+      color: #f4e7b0;
+      border-color: rgba(232, 212, 138, 0.55);
+      background: rgba(18, 26, 48, 0.92);
+    }
   `
   document.head.appendChild(style)
 }
@@ -113,25 +161,19 @@ export function initLoader(): void {
   }
 
   const stopMessages = cycleMessages(root)
-  ensureOpenCue(root)
+  const cue = ensureOpenCue(root)
   void playAmbient()
 
-  root.classList.add('is-openable')
-  root.setAttribute(
-    'aria-label',
-    'Opening the invitation — tap to enter, or wait a few seconds',
-  )
+  root.setAttribute('aria-label', 'Opening the invitation — tap to open early, or wait until ready')
 
   let opened = false
-  let autoTimer = 0
 
   const dismiss = (fromGesture: boolean) => {
     if (opened || root.classList.contains('is-done')) return
     opened = true
     markOpened()
     stopMessages()
-    window.clearTimeout(autoTimer)
-    root.removeEventListener('click', onGesture)
+    cue.removeEventListener('click', onGesture)
 
     if (fromGesture) unmuteAmbient()
     else void playAmbient()
@@ -142,8 +184,11 @@ export function initLoader(): void {
   }
 
   const onGesture = () => dismiss(true)
+  cue.addEventListener('click', onGesture)
 
-  root.addEventListener('click', onGesture)
-
-  autoTimer = window.setTimeout(() => dismiss(false), AUTO_OPEN_MS)
+  void whenReady().then(async () => {
+    stopMessages()
+    await playAmbient()
+    dismiss(false)
+  })
 }
