@@ -309,18 +309,27 @@ export function initMixtape(tracks: SoundtrackTrack[], page: MixtapePage): void 
   }
 
   const stop = () => {
-    if (!player) return
+    // Clear intent first so residual YouTube events cannot revive the dock.
     wantPlay = false
     active = false
     resumeAt = 0
-    player.stopVideo()
-    player.seekTo(0, true)
     paintPlaying(false)
     stopTimer()
-    unduckAmbient()
-    paintTime(0)
     setMiniVisible(false)
     clearPersisted()
+    paintTime(0)
+
+    if (player && ready) {
+      try {
+        player.pauseVideo()
+        const track = tracks[index] ?? tracks[0]
+        if (track) player.cueVideoById(track.youtubeId)
+      } catch {
+        /* player may already be torn down */
+      }
+    }
+
+    unduckAmbient()
   }
 
   const pauseOnly = () => {
@@ -343,7 +352,8 @@ export function initMixtape(tracks: SoundtrackTrack[], page: MixtapePage): void 
 
   deck?.querySelector('[data-deck-stop]')?.addEventListener('click', stop)
   mini?.querySelector('[data-mixtape-stop]')?.addEventListener('click', stop)
-  mini?.querySelector('[data-mixtape-close]')?.addEventListener('click', (event) => {
+  closeBtn?.addEventListener('click', (event) => {
+    event.preventDefault()
     event.stopPropagation()
     stop()
   })
@@ -356,9 +366,21 @@ export function initMixtape(tracks: SoundtrackTrack[], page: MixtapePage): void 
   mini?.addEventListener('click', (event) => {
     const target = event.target
     if (!(target instanceof Element)) return
-    // Transport / close keep working; everything else opens the full mixtape.
-    if (target.closest('[data-mixtape-controls], [data-mixtape-close]')) return
+    if (target.closest('[data-mixtape-controls]')) return
+
+    // Touch: first tap reveals the outside close; second tap opens soundtrack.
+    if (!canHover.matches && !armed) {
+      setArmed(true)
+      return
+    }
     window.location.href = 'soundtrack.html'
+  })
+
+  document.addEventListener('pointerdown', (event) => {
+    if (!dock || dock.hidden || !armed) return
+    const target = event.target
+    if (target instanceof Node && dock.contains(target)) return
+    setArmed(false)
   })
 
   deck?.querySelectorAll<HTMLButtonElement>('[data-track]').forEach((button) => {
@@ -422,8 +444,11 @@ export function initMixtape(tracks: SoundtrackTrack[], page: MixtapePage): void 
           },
           onStateChange: (event) => {
             if (event.data === YT.PlayerState.PLAYING) {
-              active = true
-              wantPlay = true
+              // Close / ambient takeover: kill leftover playback, don't reopen the dock.
+              if (!wantPlay || !active) {
+                event.target.pauseVideo()
+                return
+              }
               paintPlaying(true)
               startTimer()
               duckAmbient()
@@ -432,15 +457,17 @@ export function initMixtape(tracks: SoundtrackTrack[], page: MixtapePage): void 
             } else if (event.data === YT.PlayerState.PAUSED) {
               paintPlaying(false)
               stopTimer()
-              unduckAmbient()
+              if (active) unduckAmbient()
               persist()
             } else if (event.data === YT.PlayerState.ENDED) {
               paintPlaying(false)
               stopTimer()
               paintTime(0)
               resumeAt = 0
+              // Don't auto-advance after an intentional close/stop.
+              if (!wantPlay || !active) return
               next()
-            } else if (event.data === YT.PlayerState.CUED && wantPlay) {
+            } else if (event.data === YT.PlayerState.CUED && wantPlay && active) {
               event.target.playVideo()
             }
           },
