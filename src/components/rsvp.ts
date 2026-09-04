@@ -30,14 +30,45 @@ function readPayload(form: HTMLFormElement) {
   }
 }
 
-function saveLocalRsvp(form: HTMLFormElement) {
+function saveLocalRsvp(payload: ReturnType<typeof readPayload>) {
   try {
     const existing = JSON.parse(localStorage.getItem(LOCAL_RSVP_KEY) ?? '[]') as unknown[]
-    existing.push(readPayload(form))
+    existing.push(payload)
     localStorage.setItem(LOCAL_RSVP_KEY, JSON.stringify(existing))
   } catch {
     // Still treat the reply as received if storage is blocked.
   }
+}
+
+/** Google Apps Script web apps accept text/plain JSON to avoid a CORS preflight. */
+function isGoogleAppsScriptEndpoint(endpoint: string): boolean {
+  return /script\.google\.com/i.test(endpoint)
+}
+
+async function submitRsvp(endpoint: string, form: HTMLFormElement): Promise<void> {
+  const payload = readPayload(form)
+
+  if (isGoogleAppsScriptEndpoint(endpoint)) {
+    const response = await fetch(endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(payload),
+    })
+
+    if (!response.ok) throw new Error(String(response.status))
+
+    const result = (await response.json().catch(() => null)) as { ok?: boolean } | null
+    if (result && result.ok === false) throw new Error('sheet-reject')
+    return
+  }
+
+  const response = await fetch(endpoint, {
+    method: 'POST',
+    headers: { Accept: 'application/json' },
+    body: new FormData(form),
+  })
+
+  if (!response.ok) throw new Error(String(response.status))
 }
 
 function waxSeal(kind: 'yes' | 'afar', symbol: string): string {
@@ -173,17 +204,12 @@ export function initRsvp(config: WeddingConfig): void {
 
     try {
       const { endpoint } = config.rsvp
+      const payload = readPayload(form)
 
       if (endpoint) {
-        const response = await fetch(endpoint, {
-          method: 'POST',
-          headers: { Accept: 'application/json' },
-          body: new FormData(form),
-        })
-
-        if (!response.ok) throw new Error(String(response.status))
+        await submitRsvp(endpoint, form)
       } else {
-        saveLocalRsvp(form)
+        saveLocalRsvp(payload)
       }
 
       form.reset()

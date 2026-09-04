@@ -358,6 +358,7 @@
         var audio = document.getElementById('intro-audio')
         if (!audio) return
         audio.volume = 0.7
+        audio.muted = false
         audio.setAttribute('playsinline', '')
         audio.setAttribute('webkit-playsinline', '')
         var wanted = true
@@ -368,25 +369,22 @@
           return
         }
 
-        var running = function () { return !audio.paused && !audio.ended }
+        var audible = function () {
+          return !audio.paused && !audio.ended && !audio.muted && audio.volume > 0
+        }
         var fromToggle = function (event) {
           var t = event.target
           return t && t.closest && t.closest('[data-music-toggle]')
         }
 
         var start = function () {
-          if (!wanted || running()) return
+          if (!wanted || audible()) return
+          // Never fall back to muted — that locks the song silent.
+          if (!audio.paused && audio.muted) audio.pause()
           audio.muted = false
           audio.volume = 0.7
           var p = audio.play()
-          if (p && p.catch) {
-            p.catch(function () {
-              if (!wanted || running()) return
-              audio.muted = true
-              var q = audio.play()
-              if (q && q.catch) q.catch(function () {})
-            })
-          }
+          if (p && p.catch) p.catch(function () {})
         }
 
         var unlock = function (event) {
@@ -400,6 +398,14 @@
         start()
         audio.addEventListener('canplay', start)
         audio.addEventListener('canplaythrough', start, { once: true })
+        var retry = setInterval(function () {
+          if (!wanted || audible()) {
+            clearInterval(retry)
+            return
+          }
+          start()
+        }, 350)
+        setTimeout(function () { clearInterval(retry) }, 12000)
         document.addEventListener('pointerdown', unlock, true)
         document.addEventListener('touchstart', unlock, { capture: true, passive: true })
         document.addEventListener('keydown', unlock, true)

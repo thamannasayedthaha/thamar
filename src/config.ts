@@ -283,10 +283,13 @@ export const wedding: WeddingConfig = {
   },
   photoUpload: {
     url: '',
-    note: 'Took a photo you love? Scan the album QR and drop it in — we want to see the night through your eyes.',
+    note: 'Look for our little retro camera at the celebrations — point, shoot, and your snaps will land in the gallery here.',
   },
   rsvp: {
-    /** Optional Formspree URL. Leave empty to keep replies in the browser for now. */
+    /**
+     * Google Apps Script web-app URL (see scripts/google-sheets-rsvp.gs).
+     * Sheet: https://docs.google.com/spreadsheets/d/17R7wyl7sjhv0bTddNpk6Q8-j-d3v0sw0WjCMDQCDpRo/
+     */
     endpoint: '',
     deadline: '1 September 2026',
     note: 'We would love to know if you will be present for the events.',

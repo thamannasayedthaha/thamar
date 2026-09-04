@@ -37,7 +37,11 @@ function scannerFrame(hasAlbum: boolean): string {
         </div>
       </div>
       <p class="photodrop__status" data-photodrop-status>
-        ${hasAlbum ? 'Scan with your phone, or open the scanner' : 'Point your camera at the album QR'}
+        ${
+          hasAlbum
+            ? 'Scan with your phone, or open the scanner'
+            : 'Meet our point-and-shoot at the events'
+        }
       </p>
       <button type="button" class="photodrop__scan-btn label-caps" data-photodrop-toggle>
         Open scanner
@@ -53,7 +57,7 @@ export function renderPhotoDrop(config: WeddingConfig): string {
 
   const action = hasAlbum
     ? `<a class="photodrop__link label-caps" href="${url}" target="_blank" rel="noopener noreferrer">Open the album</a>`
-    : `<p class="photodrop__pending">The album is almost ready — check back soon.</p>`
+    : `<p class="photodrop__pending">We’ll have a retro camera out for you to borrow — snap whatever’s unfolding, and every shot will gather in the gallery on this site.</p>`
 
   const polaroid = (side: string, image: string, caption: string) => `
     <figure class="photodrop__polaroid photodrop__polaroid--${side}" aria-hidden="true">
@@ -72,12 +76,12 @@ export function renderPhotoDrop(config: WeddingConfig): string {
         ${polaroid('right', config.gallery[2]?.src ?? config.gallery[1]?.src ?? '', 'Cheers!')}
         <div class="photodrop__card">
           <span class="photodrop__seal" aria-hidden="true">${monogram}</span>
-          <p class="photodrop__kicker label-caps">Drop a keepsake</p>
+          <p class="photodrop__kicker label-caps">Pass the camera</p>
           <div class="photodrop__qr">${scannerFrame(hasAlbum)}</div>
           <ol class="photodrop__steps">
-            <li><span>1</span>Scan</li>
-            <li><span>2</span>Open</li>
-            <li><span>3</span>Add your photos</li>
+            <li><span>1</span>Find it</li>
+            <li><span>2</span>Snap</li>
+            <li><span>3</span>See it here</li>
           </ol>
           ${action}
         </div>
@@ -113,7 +117,7 @@ export async function initPhotoDrop(config: WeddingConfig): Promise<void> {
   const albumUrl = config.photoUpload.url.trim()
   const idleStatus = albumUrl
     ? 'Scan with your phone, or open the scanner'
-    : 'Point your camera at the album QR'
+    : 'Meet our point-and-shoot at the events'
 
   if (albumUrl) {
     await QRCode.toCanvas(qrCanvas, albumUrl, {

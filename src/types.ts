@@ -142,7 +142,11 @@ export type PhotoUploadConfig = {
 }
 
 export type RsvpConfig = {
-  /** Form POST target (e.g. Formspree). Empty string stores replies in the browser. */
+  /**
+   * POST target for replies.
+   * Prefer the Google Apps Script web-app URL from `scripts/google-sheets-rsvp.gs`.
+   * Formspree-style form endpoints also work. Empty string stores replies in the browser only.
+   */
   endpoint: string
   deadline: string
   note: string
