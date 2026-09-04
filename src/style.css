@@ -1103,22 +1103,47 @@ html[data-theme='dark'] .theme-toggle__icon--sun {
     inset 0 1px 0 rgba(255, 255, 255, 0.16),
     0 14px 36px rgba(40, 48, 36, 0.3);
   color: #d7e8cb;
+  cursor: pointer;
 }
 
 .mixtape-mini[hidden] {
   display: none !important;
 }
 
-.mixtape-mini__open {
-  display: inline-block;
+.mixtape-mini__bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
   margin: 0 0 0.35rem;
+}
+
+.mixtape-mini__open {
+  margin: 0;
   color: #c8a45c;
-  text-decoration: none;
   letter-spacing: 0.12em;
 }
 
-.mixtape-mini__open:hover {
-  color: #e8d48a;
+.mixtape-mini__close {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 1.55rem;
+  height: 1.55rem;
+  padding: 0;
+  border: 1px solid #2c3328;
+  border-radius: 0.25rem;
+  background: linear-gradient(180deg, #c5c2b6, #8e8b80);
+  color: #1b1c19;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.45);
+  cursor: pointer;
+  line-height: 0;
+}
+
+.mixtape-mini__close svg {
+  display: block;
+  width: 0.85rem;
+  height: 0.85rem;
 }
 
 .mixtape-mini__body {
@@ -1173,6 +1198,7 @@ html[data-theme='dark'] .theme-toggle__icon--sun {
   align-items: center;
   gap: 0.3rem;
   grid-column: 2;
+  cursor: default;
 }
 
 .mixtape-mini__key {

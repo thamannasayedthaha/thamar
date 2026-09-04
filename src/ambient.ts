@@ -1,3 +1,5 @@
+import { isMixtapeSessionPlaying, pauseMixtapePlayback } from './mixtape'
+
 const MUTED_KEY = 'thamar-music-off'
 const VOLUME = 0.7
 const SONG_SRC = '/audio/simply-the-best.mp3'
@@ -135,7 +137,10 @@ function ensurePlayer(): void {
 
 function isMusicToggleEvent(event: Event): boolean {
   const target = event.target
-  return target instanceof Element && Boolean(target.closest('[data-music-toggle]'))
+  return (
+    target instanceof Element &&
+    Boolean(target.closest('[data-music-toggle], [data-mixtape-mini], [data-deck-play], [data-deck-stop], [data-deck-prev], [data-deck-next], [data-track]'))
+  )
 }
 
 function bindUnlock(): void {
@@ -193,11 +198,16 @@ export function initAmbient(): void {
   syncToggles()
   bindUnlock()
 
-  if (wanted && !ducked) {
+  // Mixtape owns audio when a session is mid-play — don't fight it on load.
+  if (isMixtapeSessionPlaying()) {
+    ducked = true
+    pause()
+    if (audio) audio.muted = true
+  } else if (wanted && !ducked) {
     void playAmbient()
 
     const retry = window.setInterval(() => {
-      if (!wanted || ducked || isAudible()) {
+      if (!wanted || ducked || isAudible() || isMixtapeSessionPlaying()) {
         window.clearInterval(retry)
         syncToggles()
         return
@@ -222,7 +232,9 @@ export function initAmbient(): void {
       } else {
         wanted = true
         writeMuted(false)
+        pauseMixtapePlayback()
         ducked = false
+        if (audio) audio.muted = false
         unmuteAmbient()
       }
       syncToggles()

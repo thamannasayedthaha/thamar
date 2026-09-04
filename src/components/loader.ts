@@ -1,10 +1,9 @@
-import { playAmbient } from '../ambient'
+import { playAmbient, unmuteAmbient } from '../ambient'
 
 const OPENED_KEY = 'thamar-opened'
 
-/** First landing holds for four full envelope cycles, whether or not the page is ready sooner. */
-const MIN_VISIBLE_MS = 10000
-const MAX_WAIT_MS = 10600
+/** Auto-open if the guest never taps. */
+const AUTO_OPEN_MS = 7000
 const MESSAGE_MS = 950
 const SWAP_MS = 350
 
@@ -16,28 +15,9 @@ const MESSAGES = [
   'Setting a place for you…',
   'Tying the ribbon…',
   'Warming up the sangeet stage…',
-  'Counting down to 04 · 10 · 2026…',
+  'Tap to open anytime…',
   'Almost yours…',
 ]
-
-function wait(ms: number): Promise<void> {
-  return new Promise((resolve) => window.setTimeout(resolve, ms))
-}
-
-async function whenReady(): Promise<void> {
-  const started = performance.now()
-
-  const fonts = document.fonts?.ready ?? Promise.resolve()
-  const loaded =
-    document.readyState === 'complete'
-      ? Promise.resolve()
-      : new Promise<void>((resolve) => window.addEventListener('load', () => resolve(), { once: true }))
-
-  await Promise.race([Promise.all([fonts, loaded]), wait(MAX_WAIT_MS)])
-
-  const elapsed = performance.now() - started
-  if (elapsed < MIN_VISIBLE_MS) await wait(MIN_VISIBLE_MS - elapsed)
-}
 
 function cycleMessages(root: HTMLElement): () => void {
   const msg = root.querySelector<HTMLElement>('.loader__msg')
@@ -83,6 +63,45 @@ function hideLoader(root: HTMLElement): void {
   root.remove()
 }
 
+function ensureOpenStyles(): void {
+  if (document.getElementById('loader-open-style')) return
+  const style = document.createElement('style')
+  style.id = 'loader-open-style'
+  style.textContent = `
+    .loader.is-openable { cursor: pointer; }
+    .loader__open {
+      appearance: none; border: 0; background: transparent; cursor: pointer;
+      margin: 0; padding: 0.15rem 0.4rem; min-height: 1.5em;
+      font-family: 'Source Serif 4', Georgia, serif;
+      font-size: 0.68rem; font-weight: 600; letter-spacing: 0.16em; text-indent: 0.16em;
+      text-transform: uppercase; color: #a08256;
+      transition: opacity 0.4s ease, color 0.25s ease;
+      animation: loader-fade 1s ease 1.1s backwards;
+    }
+    .loader__open:hover,
+    .loader__open:focus-visible { color: #6a5b59; outline: none; }
+    .loader.is-done .loader__open { opacity: 0; }
+    html[data-theme='dark'] .loader__open { color: #c8a45c; }
+    html[data-theme='dark'] .loader__open:hover,
+    html[data-theme='dark'] .loader__open:focus-visible { color: #e8d48a; }
+  `
+  document.head.appendChild(style)
+}
+
+function ensureOpenCue(root: HTMLElement): HTMLButtonElement {
+  ensureOpenStyles()
+  const existing = root.querySelector<HTMLButtonElement>('.loader__open')
+  if (existing) return existing
+
+  const cue = document.createElement('button')
+  cue.type = 'button'
+  cue.className = 'loader__open'
+  cue.textContent = 'Tap to open'
+  cue.setAttribute('aria-label', 'Open the invitation')
+  root.appendChild(cue)
+  return cue
+}
+
 export function initLoader(): void {
   const root = document.getElementById('site-loader')
   if (!root) return
@@ -94,20 +113,37 @@ export function initLoader(): void {
   }
 
   const stopMessages = cycleMessages(root)
+  ensureOpenCue(root)
   void playAmbient()
 
-  const dismiss = () => {
-    if (root.classList.contains('is-done')) return
+  root.classList.add('is-openable')
+  root.setAttribute(
+    'aria-label',
+    'Opening the invitation — tap to enter, or wait a few seconds',
+  )
+
+  let opened = false
+  let autoTimer = 0
+
+  const dismiss = (fromGesture: boolean) => {
+    if (opened || root.classList.contains('is-done')) return
+    opened = true
     markOpened()
     stopMessages()
+    window.clearTimeout(autoTimer)
+    root.removeEventListener('click', onGesture)
+
+    if (fromGesture) unmuteAmbient()
+    else void playAmbient()
+
     root.classList.add('is-done')
     document.documentElement.classList.remove('is-loading')
     window.setTimeout(() => root.remove(), 800)
   }
 
-  void whenReady().then(async () => {
-    stopMessages()
-    await playAmbient()
-    dismiss()
-  })
+  const onGesture = () => dismiss(true)
+
+  root.addEventListener('click', onGesture)
+
+  autoTimer = window.setTimeout(() => dismiss(false), AUTO_OPEN_MS)
 }

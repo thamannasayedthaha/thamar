@@ -10,6 +10,7 @@ const icons = {
   prev: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 5h2.2v14H6zM18 5 9 12l9 7z"/></svg>`,
   next: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15.8 5H18v14h-2.2zM6 5l9 7-9 7z"/></svg>`,
   stop: `<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="7" width="10" height="10" rx="0.6"/></svg>`,
+  close: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.2 6.2 17.8 17.8M17.8 6.2 6.2 17.8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>`,
 }
 
 type PersistedMixtape = {
@@ -68,26 +69,42 @@ function clearPersisted(): void {
   }
 }
 
+/** True when a mixtape session wants to keep playing across pages. */
+export function isMixtapeSessionPlaying(): boolean {
+  const saved = readPersisted()
+  return Boolean(saved?.active && saved.playing)
+}
+
+let pauseForAmbient: (() => void) | null = null
+
+/** Pause the mixtape so ambient intro can take over (keeps the mini session). */
+export function pauseMixtapePlayback(): void {
+  pauseForAmbient?.()
+}
+
 /** Fixed mini player + shared YouTube host (all pages). */
 export function renderMixtapeChrome(firstTitle: string): string {
   return `
-    <aside class="mixtape-mini" data-mixtape-mini hidden aria-label="Mixtape player">
-      <a class="mixtape-mini__open label-caps" href="soundtrack.html">Mixtape</a>
-      <div class="mixtape-mini__body">
-        <span class="mixtape-mini__reel" aria-hidden="true"></span>
-        <div class="mixtape-mini__meta">
-          <span class="mixtape-mini__index" data-mixtape-index>01</span>
-          <span class="mixtape-mini__title" data-mixtape-title>${firstTitle}</span>
-          <span class="mixtape-mini__time" data-mixtape-time>0:00</span>
+    <div class="mixtape-dock" data-mixtape-dock hidden>
+      <button class="mixtape-dock__close" type="button" data-mixtape-close aria-label="Close player">${icons.close}</button>
+      <aside class="mixtape-mini" data-mixtape-mini aria-label="Mixtape player — open soundtrack" role="complementary">
+        <p class="mixtape-mini__open label-caps">Mixtape</p>
+        <div class="mixtape-mini__body">
+          <span class="mixtape-mini__reel" aria-hidden="true"></span>
+          <div class="mixtape-mini__meta">
+            <span class="mixtape-mini__index" data-mixtape-index>01</span>
+            <span class="mixtape-mini__title" data-mixtape-title>${firstTitle}</span>
+            <span class="mixtape-mini__time" data-mixtape-time>0:00</span>
+          </div>
+          <div class="mixtape-mini__controls" data-mixtape-controls>
+            <button class="mixtape-mini__key" type="button" data-mixtape-prev aria-label="Previous track">${icons.prev}</button>
+            <button class="mixtape-mini__key mixtape-mini__key--play" type="button" data-mixtape-play aria-pressed="false" aria-label="Play">${icons.play}</button>
+            <button class="mixtape-mini__key" type="button" data-mixtape-next aria-label="Next track">${icons.next}</button>
+            <button class="mixtape-mini__key" type="button" data-mixtape-stop aria-label="Stop">${icons.stop}</button>
+          </div>
         </div>
-        <div class="mixtape-mini__controls">
-          <button class="mixtape-mini__key" type="button" data-mixtape-prev aria-label="Previous track">${icons.prev}</button>
-          <button class="mixtape-mini__key mixtape-mini__key--play" type="button" data-mixtape-play aria-pressed="false" aria-label="Play">${icons.play}</button>
-          <button class="mixtape-mini__key" type="button" data-mixtape-next aria-label="Next track">${icons.next}</button>
-          <button class="mixtape-mini__key" type="button" data-mixtape-stop aria-label="Stop">${icons.stop}</button>
-        </div>
-      </div>
-    </aside>
+      </aside>
+    </div>
     <div class="mixtape-yt" aria-hidden="true">
       <div id="mixtape-yt-player"></div>
     </div>
@@ -100,8 +117,12 @@ export function initMixtape(tracks: SoundtrackTrack[], page: MixtapePage): void 
   if (!tracks.length) return
 
   const deck = document.querySelector<HTMLElement>('.explore-deck--page')
+  const dock = document.querySelector<HTMLElement>('[data-mixtape-dock]')
   const mini = document.querySelector<HTMLElement>('[data-mixtape-mini]')
+  const closeBtn = document.querySelector<HTMLButtonElement>('[data-mixtape-close]')
   const saved = readPersisted()
+  const canHover = window.matchMedia('(hover: hover) and (pointer: fine)')
+  let armed = false
 
   let index = Math.min(Math.max(saved?.index ?? 0, 0), tracks.length - 1)
   let volume = saved?.volume ?? 0.8
@@ -135,12 +156,21 @@ export function initMixtape(tracks: SoundtrackTrack[], page: MixtapePage): void 
   }
 
   const setMiniVisible = (visible: boolean) => {
-    if (!mini) return
+    if (!dock) return
     if (page === 'soundtrack') {
-      mini.hidden = true
+      dock.hidden = true
       return
     }
-    mini.hidden = !visible
+    dock.hidden = !visible
+    if (!visible) {
+      armed = false
+      dock.classList.remove('is-armed')
+    }
+  }
+
+  const setArmed = (next: boolean) => {
+    armed = next
+    dock?.classList.toggle('is-armed', next)
   }
 
   const paintPlaying = (isPlaying: boolean) => {
@@ -293,16 +323,43 @@ export function initMixtape(tracks: SoundtrackTrack[], page: MixtapePage): void 
     clearPersisted()
   }
 
+  const pauseOnly = () => {
+    wantPlay = false
+    if (player && ready) {
+      const state = player.getPlayerState()
+      if (state === window.YT?.PlayerState.PLAYING || state === window.YT?.PlayerState.BUFFERING) {
+        player.pauseVideo()
+      }
+    }
+    paintPlaying(false)
+    stopTimer()
+    persist()
+  }
+
+  pauseForAmbient = pauseOnly
+
   deckPlay?.addEventListener('click', togglePlay)
   miniPlay?.addEventListener('click', togglePlay)
 
   deck?.querySelector('[data-deck-stop]')?.addEventListener('click', stop)
   mini?.querySelector('[data-mixtape-stop]')?.addEventListener('click', stop)
+  mini?.querySelector('[data-mixtape-close]')?.addEventListener('click', (event) => {
+    event.stopPropagation()
+    stop()
+  })
 
   deck?.querySelector('[data-deck-prev]')?.addEventListener('click', prev)
   deck?.querySelector('[data-deck-next]')?.addEventListener('click', next)
   mini?.querySelector('[data-mixtape-prev]')?.addEventListener('click', prev)
   mini?.querySelector('[data-mixtape-next]')?.addEventListener('click', next)
+
+  mini?.addEventListener('click', (event) => {
+    const target = event.target
+    if (!(target instanceof Element)) return
+    // Transport / close keep working; everything else opens the full mixtape.
+    if (target.closest('[data-mixtape-controls], [data-mixtape-close]')) return
+    window.location.href = 'soundtrack.html'
+  })
 
   deck?.querySelectorAll<HTMLButtonElement>('[data-track]').forEach((button) => {
     button.addEventListener('click', () => {
