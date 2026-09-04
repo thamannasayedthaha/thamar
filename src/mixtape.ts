@@ -276,6 +276,26 @@ export function initMixtape(tracks: SoundtrackTrack[], page: MixtapePage): void 
     load(true)
   }
 
+  const SEEK_STEP = 10
+
+  const seekBy = (delta: number) => {
+    if (!player || !ready) return
+    const current = player.getCurrentTime()
+    if (!Number.isFinite(current)) return
+    let duration = Number.POSITIVE_INFINITY
+    try {
+      const d = player.getDuration()
+      if (Number.isFinite(d) && d > 0) duration = d
+    } catch {
+      /* duration unavailable until metadata loads */
+    }
+    const target = Math.min(Math.max(0, current + delta), Math.max(0, duration - 0.25))
+    player.seekTo(target, true)
+    resumeAt = target
+    paintTime(target)
+    persist()
+  }
+
   const togglePlay = () => {
     if (!player || !ready) {
       deck?.querySelectorAll<HTMLElement>('[data-lcd-title]').forEach((el) => {
@@ -366,6 +386,8 @@ export function initMixtape(tracks: SoundtrackTrack[], page: MixtapePage): void 
 
   deck?.querySelector('[data-deck-prev]')?.addEventListener('click', prev)
   deck?.querySelector('[data-deck-next]')?.addEventListener('click', next)
+  deck?.querySelector('[data-deck-rew]')?.addEventListener('click', () => seekBy(-SEEK_STEP))
+  deck?.querySelector('[data-deck-ff]')?.addEventListener('click', () => seekBy(SEEK_STEP))
   mini?.querySelector('[data-mixtape-prev]')?.addEventListener('click', (event) => {
     event.stopPropagation()
     prev()

@@ -1,4 +1,4 @@
-import type { SocialComment, SocialPost, SocialStory, WeddingConfig, WeddingEvent } from '../types'
+import type { SocialComment, SocialPost, SocialStory, WeddingConfig } from '../types'
 
 const LIKES_KEY = 'thamar-feed-likes-v2'
 const COMMENTS_KEY = 'thamar-feed-comments-v2'
@@ -50,7 +50,6 @@ const icons = {
   repost: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7h11l-2.5-2.5L17 3l5 5-5 5-1.5-1.5L18 9H7V7zm10 10H6l2.5 2.5L11 21l-5-5 5-5 1.5 1.5L6 15h11v2z" /></svg>`,
   heart: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12.1 20.3s-7.6-4.7-9.4-8.6C1.4 9 3.1 6 6.2 6c1.8 0 3.1 1 3.9 2.2C10.9 7 12.2 6 14 6c3.1 0 4.8 3 3.5 5.7-1.8 3.9-9.4 8.6-9.4 8.6z" /></svg>`,
   bookmark: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" /></svg>`,
-  search: `<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5" /><path d="m16 16 4.2 4.2" /></svg>`,
   more: `<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1.4" /><circle cx="12" cy="12" r="1.4" /><circle cx="19" cy="12" r="1.4" /></svg>`,
   verified: `<svg class="feed__verified" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.4l2.3 1.7 2.8-.3 1.1 2.6 2.4 1.5-.6 2.8.9 2.7-2.2 1.8-.8 2.7-2.9.2L12 21.6l-2.4-1.5-2.9-.2-.8-2.7-2.2-1.8.9-2.7-.6-2.8L6.4 5l1.1-2.6 2.8.3z" /><path class="feed__verified-tick" d="M8.6 12.4l2.3 2.2 4.5-4.8" /></svg>`,
 }
@@ -236,13 +235,11 @@ function nextComingStory(stories: SocialStory[]): SocialStory | undefined {
 
 function renderComingPost(
   coming: SocialStory,
-  comingEvent: WeddingEvent | undefined,
   config: WeddingConfig,
   handle: string,
 ): string {
   const cleanHandle = handle.replace(/^@/, '')
   const name = config.couple.partnerOne
-  const dateLabel = comingEvent?.date ?? ''
   const caption = coming.caption ?? `${coming.label} — posting from the day.`
 
   return `
@@ -259,7 +256,6 @@ function renderComingPost(
           </div>
         </div>
         <p class="feed__text">${caption}</p>
-        ${dateLabel ? `<p class="feed__soon-note">${coming.label} · ${dateLabel}</p>` : ''}
       </div>
     </article>
   `
@@ -282,23 +278,16 @@ function sortFeedPosts(posts: SocialPost[]): SocialPost[] {
 export function renderUpdates(config: WeddingConfig): string {
   const posts = sortFeedPosts(config.feed.posts)
   const coming = nextComingStory(config.feed.stories)
-  const comingEvent = coming ? config.events.find((event) => event.id === coming.id) : undefined
 
   const feedHandle = `@${config.couple.instagram.thamanna}`
   const teaser = coming
-    ? renderComingPost(coming, comingEvent, config, feedHandle)
+    ? renderComingPost(coming, config, feedHandle)
     : ''
 
   return `
     <section class="section feed feed--twitter${!prefersReducedMotion() ? ' feed--staged' : ''}" id="live" aria-label="Timeline">
       <div class="feed__stage">
         <div class="feed__app">
-          <header class="feed__topbar">
-            <span class="feed__topbar-mark" aria-hidden="true">${config.couple.monogram}</span>
-            <h3 class="feed__topbar-title">Home</h3>
-            <span class="feed__topbar-icons" aria-hidden="true">${icons.search}</span>
-          </header>
-
           <div class="feed__stream">
             ${teaser}
             ${posts.map((post) => renderPost(post, config)).join('')}

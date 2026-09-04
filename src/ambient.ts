@@ -14,8 +14,14 @@ let audio: HTMLAudioElement | null = null
 let wanted = true
 let ducked = false
 let unlockBound = false
+let unlockTeardown: (() => void) | null = null
 let persistBound = false
 let restored = false
+
+function clearUnlockListeners(): void {
+  unlockTeardown?.()
+  unlockTeardown = null
+}
 
 function readMuted(): boolean {
   try {
@@ -126,6 +132,7 @@ export function playAmbient(): Promise<boolean> {
   ensurePlayer()
   if (!audio || !wanted || ducked) return Promise.resolve(false)
   if (isAudible()) {
+    clearUnlockListeners()
     syncToggles()
     return Promise.resolve(true)
   }
@@ -147,7 +154,9 @@ export function playAmbient(): Promise<boolean> {
     .then(() => {
       applyAudible()
       syncToggles()
-      return isAudible()
+      const ok = isAudible()
+      if (ok) clearUnlockListeners()
+      return ok
     })
     .catch(() => {
       syncToggles()
@@ -209,7 +218,7 @@ function isMusicToggleEvent(event: Event): boolean {
   const target = event.target
   return (
     target instanceof Element &&
-    Boolean(target.closest('[data-music-toggle], [data-mixtape-mini], [data-deck-play], [data-deck-stop], [data-deck-prev], [data-deck-next], [data-track]'))
+    Boolean(target.closest('[data-music-toggle], [data-mixtape-mini], [data-deck-play], [data-deck-stop], [data-deck-prev], [data-deck-next], [data-deck-rew], [data-deck-ff], [data-track]'))
   )
 }
 
@@ -217,9 +226,43 @@ function bindUnlock(): void {
   if (unlockBound) return
   unlockBound = true
 
+  const teardown = () => {
+    document.removeEventListener('pointerdown', unlock, true)
+    document.removeEventListener('touchstart', unlock, true)
+    document.removeEventListener('keydown', unlock, true)
+    if (unlockTeardown === teardown) unlockTeardown = null
+  }
+  unlockTeardown = teardown
+
   const unlock = (event: Event) => {
     if (isMusicToggleEvent(event)) return
-    unmuteAmbient()
+    if (!wanted || ducked) return
+    // Already playing with sound — stop listening so clicks don't keep re-triggering play().
+    if (isAudible()) {
+      teardown()
+      return
+    }
+
+    ensurePlayer()
+    if (!audio) return
+    restoreTime()
+    applyAudible()
+    const start = audio.play()
+    if (!start) {
+      syncToggles()
+      if (isAudible()) teardown()
+      return
+    }
+
+    void start
+      .then(() => {
+        applyAudible()
+        syncToggles()
+        if (isAudible()) teardown()
+      })
+      .catch(() => {
+        syncToggles()
+      })
   }
 
   document.addEventListener('pointerdown', unlock, true)

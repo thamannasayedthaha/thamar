@@ -372,9 +372,12 @@
         var audible = function () {
           return !audio.paused && !audio.ended && !audio.muted && audio.volume > 0
         }
+        var musicOff = function () {
+          try { return sessionStorage.getItem('thamar-music-off') === '1' } catch (e) { return false }
+        }
         var fromToggle = function (event) {
           var t = event.target
-          return t && t.closest && t.closest('[data-music-toggle]')
+          return t && t.closest && t.closest('[data-music-toggle], [data-mixtape-mini], [data-deck-play], [data-deck-stop], [data-deck-prev], [data-deck-next], [data-deck-rew], [data-deck-ff], [data-track]')
         }
 
         var didRestore = false
@@ -409,24 +412,47 @@
           } catch (e) {}
         }
 
+        var removeUnlock = function () {
+          document.removeEventListener('pointerdown', unlock, true)
+          document.removeEventListener('touchstart', unlock, true)
+          document.removeEventListener('keydown', unlock, true)
+        }
+
         var start = function () {
-          if (!wanted || audible()) return
+          if (musicOff()) { wanted = false; return }
+          if (!wanted || audible()) {
+            if (audible()) removeUnlock()
+            return
+          }
           // Never fall back to muted — that locks the song silent.
           if (!audio.paused && audio.muted) audio.pause()
           restore()
           audio.muted = false
           audio.volume = 0.7
           var p = audio.play()
-          if (p && p.catch) p.catch(function () {})
+          if (p && p.then) {
+            p.then(function () { if (audible()) removeUnlock() }).catch(function () {})
+          } else if (audible()) {
+            removeUnlock()
+          }
         }
 
         var unlock = function (event) {
+          if (musicOff()) { wanted = false; return }
           if (!wanted || fromToggle(event)) return
+          if (audible()) {
+            removeUnlock()
+            return
+          }
           restore()
           audio.muted = false
           audio.volume = 0.7
           var p = audio.play()
-          if (p && p.catch) p.catch(function () {})
+          if (p && p.then) {
+            p.then(function () { if (audible()) removeUnlock() }).catch(function () {})
+          } else if (audible()) {
+            removeUnlock()
+          }
         }
 
         window.addEventListener('pagehide', persist)
@@ -441,8 +467,10 @@
         audio.addEventListener('canplay', start)
         audio.addEventListener('canplaythrough', start, { once: true })
         var retry = setInterval(function () {
+          if (musicOff()) { wanted = false; clearInterval(retry); return }
           if (!wanted || audible()) {
             clearInterval(retry)
+            if (audible()) removeUnlock()
             return
           }
           start()

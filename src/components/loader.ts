@@ -92,7 +92,7 @@ function ensureOpenStyles(): void {
       position: absolute;
       z-index: 8;
       left: 50%;
-      bottom: max(1.4rem, env(safe-area-inset-bottom, 0px) + 1rem);
+      bottom: max(2.85rem, env(safe-area-inset-bottom, 0px) + 2.4rem);
       transform: translateX(-50%);
       appearance: none;
       border: 1px solid rgba(200, 164, 92, 0.42);

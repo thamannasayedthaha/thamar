@@ -11,6 +11,7 @@ export type YtPlayer = {
   mute: () => void
   unMute: () => void
   getCurrentTime: () => number
+  getDuration: () => number
   getPlayerState: () => number
   destroy: () => void
 }

@@ -3,6 +3,8 @@ import type { SoundtrackTrack, WeddingConfig } from '../types'
 const icons = {
   play: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13L19 12z"/></svg>`,
   prev: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 5h2.2v14H6zM18 5 9 12l9 7z"/></svg>`,
+  rew: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12.2 12 19.5 6.2v11.6L12.2 12zM4.5 12 11.8 6.2v11.6L4.5 12z"/></svg>`,
+  ff: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11.8 12 4.5 6.2v11.6L11.8 12zm7.7 0-7.3-5.8v11.6L19.5 12z"/></svg>`,
   next: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15.8 5H18v14h-2.2zM6 5l9 7-9 7z"/></svg>`,
   stop: `<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="7" width="10" height="10" rx="0.6"/></svg>`,
 }
@@ -12,7 +14,7 @@ function pad(n: number): string {
 }
 
 function renderControl(
-  name: 'prev' | 'stop' | 'next',
+  name: 'prev' | 'rew' | 'stop' | 'ff' | 'next',
   label: string,
   icon: string,
   interactive: boolean,
@@ -34,6 +36,7 @@ function renderBoombox(first: SoundtrackTrack | undefined, interactive: boolean)
     : `
           <span class="explore-deck__vol" aria-hidden="true">
             <span class="label-caps">Vol</span>
+            <input type="range" min="0" max="1" step="0.01" value="0.8" tabindex="-1" />
           </span>
         `
 
@@ -58,12 +61,14 @@ function renderBoombox(first: SoundtrackTrack | undefined, interactive: boolean)
       </p>
       <div class="explore-deck__controls">
         ${renderControl('prev', 'Previous track', icons.prev, interactive)}
+        ${renderControl('rew', 'Back 10 seconds', icons.rew, interactive)}
         ${
           interactive
             ? `<button class="explore-deck__key explore-deck__key--play" type="button" data-deck-play aria-pressed="false" aria-label="Play">${icons.play}</button>`
             : `<span class="explore-deck__key explore-deck__key--play" aria-hidden="true">${icons.play}</span>`
         }
         ${renderControl('stop', 'Stop', icons.stop, interactive)}
+        ${renderControl('ff', 'Forward 10 seconds', icons.ff, interactive)}
         ${renderControl('next', 'Next track', icons.next, interactive)}
         ${vol}
       </div>
