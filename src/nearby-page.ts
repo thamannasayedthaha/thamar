@@ -10,5 +10,5 @@ if (!app) {
 }
 
 app.innerHTML = renderPage(wedding, 'nearby', renderGuide(wedding))
-initSite()
+initSite('nearby')
 initGuide(wedding)

@@ -300,9 +300,9 @@ export const wedding: WeddingConfig = {
     tracks: [
       {
         id: 'first-song',
-        title: 'April Is the Cruelest Month',
+        title: 'A Letter to Georgia',
         moment: 'The Airborne Toxic Event · first song we shared',
-        youtubeId: '3MyGDDsLMDg',
+        youtubeId: 'aBF7Tfm16qg',
       },
       {
         id: 'likes-me',

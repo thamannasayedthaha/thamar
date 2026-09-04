@@ -11,4 +11,4 @@ if (!app) {
 
 app.innerHTML = renderPage(wedding, 'quiz', renderQuiz(wedding))
 initQuiz(wedding)
-initSite()
+initSite('quiz')

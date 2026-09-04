@@ -1,7 +1,9 @@
 import { initAmbient, renderMusicToggle } from './ambient'
+import { wedding } from './config'
 import { renderAmbientOverlay } from './components/petals'
 import { initLoader } from './components/loader'
 import { renderWcCorners, renderWcDivider } from './components/watercolor'
+import { initMixtape, renderMixtapeChrome } from './mixtape'
 import { initThemeToggle, renderThemeToggle } from './theme'
 import type { WeddingConfig } from './types'
 
@@ -91,6 +93,7 @@ export function renderPage(config: WeddingConfig, page: SitePage, main: string):
       ${renderMusicToggle()}
       <a class="share-fab label-caps" href="${photosHref}">Share the Love</a>
     </div>
+    ${renderMixtapeChrome(config.soundtrack.tracks[0]?.title ?? 'Mixtape')}
     <footer class="footer">
       ${renderWcDivider()}
       ${renderWcCorners({ bottom: 'botanical', bottomSide: 'bl' })}
@@ -135,9 +138,10 @@ function initNavMenu(): void {
   })
 }
 
-export function initSite(): void {
+export function initSite(page: SitePage = 'home'): void {
   initThemeToggle()
   initNavMenu()
   initAmbient()
   initLoader()
+  initMixtape(wedding.soundtrack.tracks, page === 'soundtrack' ? 'soundtrack' : 'other')
 }

@@ -1,10 +1,7 @@
 import type { SoundtrackTrack, WeddingConfig } from '../types'
-import { duckAmbient, unduckAmbient } from '../ambient'
-import { loadYouTubeApi, type YtPlayer } from '../youtube'
 
 const icons = {
   play: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13L19 12z"/></svg>`,
-  pause: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5h3.5v14H7zM13.5 5H17v14h-3.5z"/></svg>`,
   prev: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 5h2.2v14H6zM18 5 9 12l9 7z"/></svg>`,
   next: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15.8 5H18v14h-2.2zM6 5l9 7-9 7z"/></svg>`,
   stop: `<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="7" width="10" height="10" rx="0.6"/></svg>`,
@@ -12,13 +9,6 @@ const icons = {
 
 function pad(n: number): string {
   return String(n + 1).padStart(2, '0')
-}
-
-function formatTime(seconds: number): string {
-  if (!Number.isFinite(seconds) || seconds < 0) return '0:00'
-  const m = Math.floor(seconds / 60)
-  const s = Math.floor(seconds % 60)
-  return `${m}:${String(s).padStart(2, '0')}`
 }
 
 function renderControl(
@@ -128,180 +118,7 @@ export function renderSoundtrackPage(config: WeddingConfig): string {
           <p class="explore-deck__lede">${lede}</p>
           <ol class="explore-deck__list">${renderTrackList(tracks)}</ol>
         </div>
-        <div class="explore-deck__yt" aria-hidden="true">
-          <div id="explore-deck-yt-player"></div>
-        </div>
       </article>
     </section>
   `
-}
-
-export function initSoundtrack(tracks: SoundtrackTrack[]): void {
-  const root = document.querySelector<HTMLElement>('.explore-deck--page')
-  const playBtn = root?.querySelector<HTMLButtonElement>('[data-deck-play]')
-  const lcdTitle = root?.querySelector<HTMLElement>('[data-lcd-title]')
-  const lcdIndex = root?.querySelector<HTMLElement>('[data-lcd-index]')
-  const lcdTime = root?.querySelector<HTMLElement>('[data-lcd-time]')
-  const vol = root?.querySelector<HTMLInputElement>('[data-deck-vol]')
-  if (!root || !playBtn || !tracks.length) return
-
-  let index = 0
-  let player: YtPlayer | null = null
-  let ready = false
-  let timer: number | undefined
-  let wantPlay = false
-
-  const setPlaying = (playing: boolean) => {
-    root.classList.toggle('is-playing', playing)
-    playBtn.setAttribute('aria-pressed', String(playing))
-    playBtn.setAttribute('aria-label', playing ? 'Pause' : 'Play')
-    playBtn.innerHTML = playing ? icons.pause : icons.play
-  }
-
-  const paint = () => {
-    const track = tracks[index]
-    if (!track) return
-    if (lcdTitle) lcdTitle.textContent = track.title
-    if (lcdIndex) lcdIndex.textContent = pad(index)
-    root.querySelectorAll<HTMLButtonElement>('[data-track]').forEach((button) => {
-      button.classList.toggle('is-current', Number(button.dataset.track) === index)
-    })
-  }
-
-  const applyVolume = () => {
-    if (!player) return
-    player.setVolume(Math.round(Number(vol?.value ?? 0.8) * 100))
-  }
-
-  const stopTimer = () => {
-    if (timer) window.clearInterval(timer)
-    timer = undefined
-  }
-
-  const startTimer = () => {
-    stopTimer()
-    timer = window.setInterval(() => {
-      if (!player || !lcdTime) return
-      lcdTime.textContent = formatTime(player.getCurrentTime())
-    }, 250)
-  }
-
-  const load = (autoplay: boolean) => {
-    const track = tracks[index]
-    if (!track || !player || !ready) return
-    paint()
-    wantPlay = autoplay
-    if (autoplay) player.loadVideoById(track.youtubeId)
-    else player.cueVideoById(track.youtubeId)
-    applyVolume()
-  }
-
-  const next = () => {
-    index = (index + 1) % tracks.length
-    load(true)
-  }
-
-  const prev = () => {
-    index = (index - 1 + tracks.length) % tracks.length
-    load(true)
-  }
-
-  playBtn.addEventListener('click', () => {
-    if (!player || !ready) {
-      if (lcdTitle) lcdTitle.textContent = 'Warming up…'
-      return
-    }
-    const state = player.getPlayerState()
-    if (state === window.YT?.PlayerState.PLAYING || state === window.YT?.PlayerState.BUFFERING) {
-      player.pauseVideo()
-      setPlaying(false)
-      stopTimer()
-      unduckAmbient()
-    } else {
-      wantPlay = true
-      if (state === window.YT?.PlayerState.CUED || state === window.YT?.PlayerState.ENDED) {
-        load(true)
-      } else {
-        player.playVideo()
-      }
-    }
-  })
-
-  root.querySelector('[data-deck-stop]')?.addEventListener('click', () => {
-    if (!player) return
-    wantPlay = false
-    player.stopVideo()
-    player.seekTo(0, true)
-    setPlaying(false)
-    stopTimer()
-    unduckAmbient()
-    if (lcdTime) lcdTime.textContent = '0:00'
-  })
-
-  root.querySelector('[data-deck-prev]')?.addEventListener('click', prev)
-  root.querySelector('[data-deck-next]')?.addEventListener('click', next)
-
-  root.querySelectorAll<HTMLButtonElement>('[data-track]').forEach((button) => {
-    button.addEventListener('click', () => {
-      index = Number(button.dataset.track)
-      load(true)
-    })
-  })
-
-  vol?.addEventListener('input', applyVolume)
-
-  paint()
-
-  void loadYouTubeApi()
-    .then((YT) => {
-      player = new YT.Player('explore-deck-yt-player', {
-        height: '1',
-        width: '1',
-        videoId: tracks[0]?.youtubeId,
-        playerVars: {
-          autoplay: 0,
-          controls: 0,
-          disablekb: 1,
-          fs: 0,
-          modestbranding: 1,
-          playsinline: 1,
-          rel: 0,
-          origin: window.location.origin,
-        },
-        events: {
-          onReady: () => {
-            ready = true
-            applyVolume()
-            paint()
-          },
-          onStateChange: (event) => {
-            if (event.data === YT.PlayerState.PLAYING) {
-              setPlaying(true)
-              startTimer()
-              duckAmbient()
-            } else if (event.data === YT.PlayerState.PAUSED) {
-              setPlaying(false)
-              stopTimer()
-              unduckAmbient()
-            } else if (event.data === YT.PlayerState.ENDED) {
-              setPlaying(false)
-              stopTimer()
-              if (lcdTime) lcdTime.textContent = '0:00'
-              next()
-            } else if (event.data === YT.PlayerState.CUED && wantPlay) {
-              event.target.playVideo()
-            }
-          },
-          onError: () => {
-            setPlaying(false)
-            stopTimer()
-            unduckAmbient()
-            if (lcdTitle) lcdTitle.textContent = 'Tape snagged'
-          },
-        },
-      })
-    })
-    .catch(() => {
-      if (lcdTitle) lcdTitle.textContent = 'Insert cassette'
-    })
 }

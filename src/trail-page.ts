@@ -11,4 +11,4 @@ if (!app) {
 
 app.innerHTML = renderPage(wedding, 'trail', renderTrail(wedding))
 initTrail()
-initSite()
+initSite('trail')

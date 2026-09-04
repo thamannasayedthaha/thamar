@@ -10,4 +10,4 @@ if (!app) {
 }
 
 app.innerHTML = renderPage(wedding, 'explore', renderExplorePage(wedding))
-initSite()
+initSite('explore')

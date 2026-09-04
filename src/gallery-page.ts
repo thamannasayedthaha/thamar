@@ -17,7 +17,7 @@ app.innerHTML = renderPage(wedding, 'gallery', renderAlbum(wedding, active))
 initGalleryTabs(document, (key) => {
   history.replaceState(null, '', `#${key}`)
 })
-initSite()
+initSite('gallery')
 
 window.addEventListener('hashchange', () => {
   const key = window.location.hash.replace('#', '')

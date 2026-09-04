@@ -11,4 +11,4 @@ if (!app) {
 
 app.innerHTML = renderPage(wedding, 'live', renderUpdates(wedding))
 initFeed()
-initSite()
+initSite('live')
