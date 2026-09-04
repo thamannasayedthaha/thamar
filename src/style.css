@@ -760,7 +760,7 @@ html[data-theme='dark'] .theme-toggle__icon--sun {
 }
 
 .soundtrack-page.section {
-  padding-top: 0;
+  padding-top: 1.5rem;
 }
 
 .soundtrack-page .explore-deck--page {
@@ -7022,13 +7022,17 @@ html[data-theme='dark'] .quiz-show__finale-retry:hover {
 }
 
 /* Local guide — a stampable field pass */
+.guide.section {
+  padding-top: 1.5rem;
+}
+
 .guide__pass {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: 1.25rem;
-  margin-top: 2rem;
+  margin-top: 0;
   padding: 1.1rem 1.35rem;
   background: linear-gradient(135deg, var(--surface-lowest), var(--surface-container));
   border: 1px solid var(--hairline);

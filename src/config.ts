@@ -291,7 +291,7 @@ export const wedding: WeddingConfig = {
      * Sheet: https://docs.google.com/spreadsheets/d/17R7wyl7sjhv0bTddNpk6Q8-j-d3v0sw0WjCMDQCDpRo/
      */
     endpoint: '',
-    deadline: '1 September 2026',
+    deadline: '20 September 2026',
     note: 'We would love to know if you will be present for the events.',
   },
   soundtrack: {
