@@ -759,6 +759,14 @@ html[data-theme='dark'] .theme-toggle__icon--sun {
   pointer-events: none;
 }
 
+.soundtrack-page.section {
+  padding-top: 0;
+}
+
+.soundtrack-page .explore-deck--page {
+  margin-top: 0;
+}
+
 .soundtrack-page .explore-deck__card {
   padding: 0.15rem 0.05rem;
 }

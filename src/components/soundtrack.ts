@@ -112,9 +112,7 @@ export function renderSoundtrackPage(config: WeddingConfig): string {
   const { title, lede, tracks } = config.soundtrack
 
   return `
-    <section class="section soundtrack-page" id="soundtrack" aria-labelledby="soundtrack-heading">
-      <h2 id="soundtrack-heading" class="section__title">${title}</h2>
-      <p class="section__lede">${lede}</p>
+    <section class="section soundtrack-page" id="soundtrack" aria-label="${title}">
       <article class="explore-deck explore-deck--page" aria-label="${title}">
         ${renderBoombox(tracks[0], true)}
         <div class="explore-deck__card">
