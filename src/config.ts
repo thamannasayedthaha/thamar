@@ -341,10 +341,10 @@ export const wedding: WeddingConfig = {
         youtubeId: 'vKDsAB1ccn0',
       },
       {
-        id: 'bismillah',
-        title: 'Bismillah',
-        moment: 'Coke Studio · when he gave the mahar',
-        youtubeId: 'w1sqYgnwEqI',
+        id: 'barakallah',
+        title: 'Barakallah',
+        moment: 'Maher Zain · when he gave the mahar',
+        youtubeId: 'mHpTdsBbYRM',
       },
       {
         id: 'aankhon',

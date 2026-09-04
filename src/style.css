@@ -3524,8 +3524,8 @@ html[data-theme='dark'] .event__marker-art {
 }
 
 .event--nikah {
-  --card-bg: #fbfaf6;
-  --card-edge: #cfd8c6;
+  --card-bg: #eef6ea;
+  --card-edge: #a8c9a0;
 }
 
 .event--haldi {
@@ -3550,7 +3550,7 @@ html[data-theme='dark'] .event__marker-art {
 
 html[data-theme='dark'] .event--meeting { --card-bg: #12182a; }
 html[data-theme='dark'] .event--engagement { --card-bg: #1a1628; }
-html[data-theme='dark'] .event--nikah { --card-bg: #141a2e; }
+html[data-theme='dark'] .event--nikah { --card-bg: #14201a; }
 html[data-theme='dark'] .event--haldi { --card-bg: #1a1830; }
 html[data-theme='dark'] .event--mehendi { --card-bg: #1a1428; }
 html[data-theme='dark'] .event--sangeet { --card-bg: #18142c; }

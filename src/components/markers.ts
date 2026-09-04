@@ -22,7 +22,7 @@ const MARKERS: Record<EventTheme, { light: string; dark: string; label: string; 
   haldi: {
     light: '/images/markers/marker-haldi.png',
     dark: '/images/markers/marker-haldi-dark.png',
-    label: 'Watercolour outline flower',
+    label: 'Golden sundrop flower',
     labelDark: 'Celestial outline flower',
   },
   mehendi: {
