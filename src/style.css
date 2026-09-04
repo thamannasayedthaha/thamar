@@ -2834,11 +2834,14 @@ html[data-theme='dark'] .share-dock .music-toggle {
 }
 
 .share-fab {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0.85rem 1.35rem;
-  border-radius: 9999px;
+  display: grid;
+  place-content: center;
+  flex: none;
+  width: 2.85rem;
+  height: 2.85rem;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 50%;
   background: var(--primary);
   color: var(--on-primary);
   text-decoration: none;
@@ -2848,9 +2851,24 @@ html[data-theme='dark'] .share-dock .music-toggle {
     box-shadow 0.6s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
+.share-fab__icon {
+  width: 1.35rem;
+  height: 1.35rem;
+  fill: currentColor;
+}
+
 .share-fab:hover {
-  transform: translateY(-2px);
+  transform: translateY(-1px);
   box-shadow: 0 16px 36px rgba(84, 99, 76, 0.38);
+}
+
+.share-fab:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 3px;
+}
+
+html[data-theme='dark'] .share-fab {
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
 }
 
 @media (min-width: 900px) {
@@ -3006,6 +3024,13 @@ html[data-theme='dark'] .hero__photo::after {
   background: var(--glass);
   backdrop-filter: blur(6px);
   box-shadow: var(--shadow-soft);
+}
+
+/* Phone: sit higher so the fixed music/share dock doesn't cover it */
+@media (max-width: 899px) {
+  .countdown {
+    margin: -4.5rem var(--margin) calc(3.5rem + 3.75rem);
+  }
 }
 
 @media (min-width: 900px) {

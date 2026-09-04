@@ -91,7 +91,14 @@ export function renderPage(config: WeddingConfig, page: SitePage, main: string):
     <main>${main}</main>
     <div class="share-dock">
       ${renderMusicToggle()}
-      <a class="share-fab label-caps" href="${photosHref}">Share the Love</a>
+      <a class="share-fab" href="${photosHref}" aria-label="Share the Love">
+        <svg class="share-fab__icon" viewBox="0 0 24 24" aria-hidden="true">
+          <path
+            fill-rule="evenodd"
+            d="M9.15 3.5 7.6 5.75H4.75A1.75 1.75 0 0 0 3 7.5v10.25c0 .97.78 1.75 1.75 1.75h14.5A1.75 1.75 0 0 0 21 17.75V7.5c0-.97-.78-1.75-1.75-1.75H16.4L14.85 3.5H9.15ZM12 16.85a4.1 4.1 0 1 0 0-8.2 4.1 4.1 0 0 0 0 8.2Zm0-2.35a1.75 1.75 0 1 0 0-3.5 1.75 1.75 0 0 0 0 3.5ZM17.85 8.85a.95.95 0 1 0 0-1.9.95.95 0 0 0 0 1.9Z"
+          />
+        </svg>
+      </a>
     </div>
     ${renderMixtapeChrome(config.soundtrack.tracks[0]?.title ?? 'Mixtape')}
     <footer class="footer">
